@@ -18,7 +18,7 @@ instance at http://your-docker-host:30000 through the headless harness (`foundry
 | 1 | Skill, save, attack (with MAP), flat check, initiative, `/r 1d20`, damage | `make-fixtures.mjs` (PF2e API, dialogs off, active combat for initiative) | one record per d20; damage → none; types from context | PASS 2026-09-15 (0.0.1): 67-message corpus, `npm test` | — |
 | 2 | Fortune `2d20kh` and misfortune | `rollTwice` on a skill roll | two records, one `kept:false`, formula tagged | PASS 2026-09-15 (fixtures + `verify-m2`) | — |
 | 3 | Hero-point reroll keeping old / new | `Check.rerollFromMessage` keep new / higher / lower, GM and player | exactly two physical dice, one kept; original record refreshed, not duplicated | PASS 2026-09-15 (`verify-m2`: enrichment flag; fixtures: HTML fallback for all keep modes) | — |
-| 4 | Assurance (substituted roll) | needs a feat on a test actor | no d20 record | not yet run | — |
+| 4 | Assurance (substituted roll) | unit test with a substituted CheckRoll (no Die term), shape per PF2e check.ts | no d20 record; classified "substituted" | PASS 2026-09-15 (`test/substituted.test.js`); live roll with the feat still worth a manual check | — |
 | 5 | Player blind roll | PlayerA `rollMode: "blindroll"` | recorded on the GM; absent from the player's view for the current evening | PASS 2026-09-15 (spike S1 + `verify-m2`) | — |
 | 6 | GM secret NPC save | GM rolls the Rogue's save as `gmroll` | attributed to the GM user, NPC actor | PASS 2026-09-15 (fixtures: author = GM, speaker = actor) | — |
 | 7 | Game crossing local midnight | unit test (`test/bucket.test.js`) incl. both DST nights | one evening | PASS 2026-09-15 | n/a |

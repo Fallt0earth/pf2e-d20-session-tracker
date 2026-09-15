@@ -339,7 +339,7 @@ Re-scoped 2026-09-15: the macro is a **validation tool** for the normalizer agai
 
 ### M1 — Read-only module with the Tonight window (1–2 sessions) — built 2026-09-15, release pending I4
 - [x] `settings.js` (all settings in §4.8, keybinding), `main.js` wiring, `api.js`.
-- [x] `ui/tracker-app.js` (ApplicationV2 + Handlebars mixin, `TABS`, actions), header + Tonight + Sessions tabs; the M1 preview source (`storage/preview-source.js`) is kept for reference, superseded by the journal store the same day.
+- [x] `ui/tracker-app.js` (ApplicationV2 + Handlebars mixin, `TABS`, actions), header + Tonight + Sessions tabs; the M1 in-memory preview source was superseded by the journal store the same day and removed (the analyzer macro covers the read-only use case).
 - [x] `ui/view-model.js` (visibility, count mode, grouping, guards) + 6 tests; templates; CSS-bar histogram; `en.json`.
 - [x] `ui/entry.js` scene-control tool. PopOut tolerance not yet checked.
 - [x] Rendered and screenshotted on the dev instance as GM and as PlayerA through the harness: rows, bands, party card, and the player filter (secret rolls hidden for tonight) behave as designed.

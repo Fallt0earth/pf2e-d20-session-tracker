@@ -14,7 +14,8 @@ export const on = ["create", "backfill"];
 /** @param {import("../../types.js").MessageData} msg */
 export function matches(msg) {
   const type = msg.flags?.pf2e?.context?.type;
-  return typeof type === "string" && PF2E_CHECK_TYPES.includes(type);
+  // A substituted roll (Assurance) has no Die term: the normalizer's classifier then reports it as such.
+  return typeof type === "string" && PF2E_CHECK_TYPES.includes(type) && d20sOfMessage(msg.rolls).length > 0;
 }
 
 /**
