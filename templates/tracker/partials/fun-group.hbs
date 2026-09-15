@@ -1,0 +1,44 @@
+<div class="fun-group band-{{g.band}} {{#if party}}party{{/if}}">
+  <div class="fun-head">
+    <span class="name"><b>{{g.label}}</b>{{#if g.subtitle}} <small>{{g.subtitle}}</small>{{/if}}</span>
+    <span class="stat"><b>{{g.n}}</b> {{localize "PF2E-D20.Tonight.Dice"}}</span>
+    <span class="stat">{{localize "PF2E-D20.Fun.Pips"}} <b>{{g.pips}}</b>{{#if g.pipsMedian}} <small>({{localize "PF2E-D20.Fun.FairMedian" median=g.pipsMedian}}, {{g.pipsRarity}})</small>{{/if}}</span>
+    <span class="stat">{{localize "PF2E-D20.Tonight.Z"}} <b>{{g.z}}</b> <em>{{g.bandLabel}}</em>{{#if g.thin}} <small>*</small>{{/if}}</span>
+  </div>
+  <div class="fun-grid">
+    <div class="fun-col">
+      {{> "modules/pf2e-d20-session-tracker/templates/tracker/partials/histogram.hbs" bars=g.histBars}}
+      <div class="kv"><span>{{localize "PF2E-D20.Fun.MeanMedianMode"}}</span><b>{{g.mean}} / {{g.median}} / {{g.modes}}</b></div>
+      <div class="kv"><span>{{localize "PF2E-D20.Fun.Spread"}}</span><b>{{g.sd}}</b> <small>({{g.min}}–{{g.max}})</small></div>
+      <div class="kv"><span>{{localize "PF2E-D20.Fun.MostLeast"}}</span><b>{{g.most}}</b> / {{g.least}}</div>
+      <div class="kv"><span>{{localize "PF2E-D20.Fun.Missing"}}</span><b>{{g.missing}}</b></div>
+      <div class="kv"><span>{{localize "PF2E-D20.Tonight.Nat20"}}</span><b>{{g.nat20Line}}</b>{{#if g.nat20When}} <small>{{g.nat20When}}</small>{{/if}}</div>
+      <div class="kv"><span>{{localize "PF2E-D20.Tonight.Nat1"}}</span><b>{{g.nat1Line}}</b></div>
+      <div class="kv"><span>{{localize "PF2E-D20.Fun.Shape"}}</span><small>{{g.chisq}}</small></div>
+    </div>
+    <div class="fun-col">
+      {{#if g.dos}}
+        <div class="kv"><span>{{localize "PF2E-D20.Fun.Dos"}}</span><b>{{g.dos.n}}</b></div>
+        <div class="dos-bar" title="{{g.dos.cs}} / {{g.dos.s}} / {{g.dos.f}} / {{g.dos.cf}}">
+          <span class="cs" style="width: {{g.dos.csPct}}%"></span><span class="s" style="width: {{g.dos.sPct}}%"></span><span class="f" style="width: {{g.dos.fPct}}%"></span><span class="cf" style="width: {{g.dos.cfPct}}%"></span>
+        </div>
+        <div class="dos-legend"><span class="cs">{{g.dos.cs}} crit</span><span class="s">{{g.dos.s}} succ</span><span class="f">{{g.dos.f}} fail</span><span class="cf">{{g.dos.cf}} crit fail</span></div>
+      {{/if}}
+      {{#each g.streaks}}
+        <div class="kv"><span>{{this.label}}</span><b>{{this.length}}</b> {{this.extra}} <small>{{this.when}}{{#if this.rarity}} · {{this.rarity}}{{/if}}</small></div>
+      {{/each}}
+      {{#each g.moments}}
+        <div class="kv"><span>{{this.label}}</span><small>{{this.text}}</small></div>
+      {{/each}}
+      {{#if g.rerolls}}
+        <div class="kv"><span>{{localize "PF2E-D20.Fun.Rerolls"}}</span><b>{{g.rerolls.count}}</b> <small>{{localize "PF2E-D20.Fun.NetPips" pips=g.rerolls.netGain}} · {{localize "PF2E-D20.Fun.BestReroll"}} {{g.rerolls.best}}{{#if g.rerolls.approx}} ≈{{/if}}</small></div>
+      {{/if}}
+      {{#if g.fortune}}
+        <div class="kv"><span>{{localize "PF2E-D20.Fun.Fortune"}}</span><small>{{g.fortune.fortune}} × kh (+{{g.fortune.fortuneGain}}), {{g.fortune.misfortune}} × kl (−{{g.fortune.misfortuneLoss}})</small></div>
+      {{/if}}
+      {{#if g.byStat.length}}
+        <div class="chips">{{#each g.byStat}}<span class="chip">{{this.stat}} <b>{{this.n}}</b> <small>{{this.mean}}</small></span>{{/each}}</div>
+      {{/if}}
+    </div>
+  </div>
+</div>

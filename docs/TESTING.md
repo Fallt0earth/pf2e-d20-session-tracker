@@ -31,6 +31,8 @@ instance at http://your-docker-host:30000 through the headless harness (`foundry
 | + | Pause capture | `captureEnabled` off, player rolls, on again, catch-up | nothing recorded while paused; catch-up recovers it | PASS 2026-09-15 (`verify-m2`) | — |
 | + | GM reload mid-evening | close and reopen the GM session | records persist; catch-up adds nothing | PASS 2026-09-15 (`verify-m2`: 108 = 108) | — |
 | + | Journal write size | 108 records of one evening | compact page | 30 046 bytes ≈ 278 B/record (`verify-m2`) | — |
+| + | Fun tab compute time | open the Fun tab on a 110-dice evening, K = 10 000 | under 1 s | 57 ms (2026-09-15, GM client) | — |
+| + | Summary chat card | header button → Everyone | card with mood, leaderboard, awards; no records extracted from it | PASS 2026-09-15 (screenshot; normalizer yields 0 records) | — |
 | + | Player view hides tonight's secret rolls | PlayerA `api.summarize` / window | secret count 0 for the current evening | PASS 2026-09-15 (window screenshot; API after the view-options fix: 111 stored, 14 secret, 97 visible, own row secret 0) | — |
 
 ## How to re-run

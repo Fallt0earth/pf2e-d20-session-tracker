@@ -59,6 +59,28 @@ export function countedRecords(records, opts) {
 }
 
 /**
+ * Group counted records by user or actor, with display labels.
+ * @param {import("../types.js").RollRecord[]} counted
+ * @param {ViewOptions} opts
+ * @returns {Map<string, { id: string, label: string, subtitle: string, records: import("../types.js").RollRecord[] }>}
+ */
+export function groupRecords(counted, opts) {
+  const o = { ...DEFAULTS, ...opts };
+  const groups = new Map();
+  for (const r of counted) {
+    const key = (o.groupBy === "actor" ? r.actorId : r.userId) ?? "unknown";
+    if (!groups.has(key)) groups.set(key, { id: key, label: "", subtitle: "", records: [] });
+    groups.get(key).records.push(r);
+  }
+  for (const g of groups.values()) {
+    const aliases = countValues(g.records.map((r) => r.alias).filter(Boolean));
+    g.label = labelFor(g.id, o, aliases);
+    g.subtitle = o.groupBy === "user" ? topKeys(aliases, 2).join(", ") : "";
+  }
+  return groups;
+}
+
+/**
  * The Tonight model: party headline + one row per group, sorted hottest first.
  * @param {import("../types.js").RollRecord[]} records  Records of ONE session.
  * @param {ViewOptions} opts
@@ -66,13 +88,8 @@ export function countedRecords(records, opts) {
 export function buildSessionModel(records, opts) {
   const o = { ...DEFAULTS, ...opts };
   const counted = countedRecords(records, o);
-  const groups = new Map();
-  for (const r of counted) {
-    const key = (o.groupBy === "actor" ? r.actorId : r.userId) ?? "unknown";
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(r);
-  }
-  const rows = [...groups.entries()].map(([id, recs]) => groupRow(id, recs, o));
+  const groups = groupRecords(counted, o);
+  const rows = [...groups.values()].map((g) => groupRow(g.id, g.records, o));
   rows.sort((a, b) => (b.luck.z ?? -Infinity) - (a.luck.z ?? -Infinity) || b.luck.n - a.luck.n || a.label.localeCompare(b.label));
   const party = groupRow("party", counted, o, "Party");
   return {

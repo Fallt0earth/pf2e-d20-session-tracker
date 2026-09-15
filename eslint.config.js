@@ -7,7 +7,7 @@ const foundryGlobals = {
   CONFIG: "readonly", CONST: "readonly", ChatMessage: "readonly", JournalEntry: "readonly",
   JournalEntryPage: "readonly", Roll: "readonly", Handlebars: "readonly",
   console: "readonly", window: "readonly", document: "readonly", setTimeout: "readonly",
-  clearTimeout: "readonly", Intl: "readonly", URL: "readonly", fetch: "readonly",
+  clearTimeout: "readonly", Intl: "readonly", URL: "readonly", fetch: "readonly", performance: "readonly",
 };
 
 const pureFiles = [
@@ -20,6 +20,7 @@ const pureFiles = [
   "scripts/capture/reroll-html.js",
   "scripts/sessions/bucket.js",
   "scripts/ui/view-model.js",
+  "scripts/ui/fun-model.js",
   "scripts/storage/codec.js",
   "scripts/util/queue.js",
 ];

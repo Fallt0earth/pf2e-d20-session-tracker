@@ -359,11 +359,11 @@ Re-scoped 2026-09-15: the macro is a **validation tool** for the normalizer agai
 - [ ] **Forge gate 2:** install; verify item 11 (writes persist across a Forge idle/wake cycle); run one real evening with capture on; afterwards compare the stored session against the M0 macro run over the same evening.
 - Acceptance: the chat-flush test (item 8) passes on Docker; two GMs online → single writer (item 10); a GM reload mid-evening loses no rolls (catch-up); every §9 item logged in `docs/TESTING.md`.
 
-### M3 — Fun aggregates and honest statistics (2 sessions)
-- [ ] `stats/streaks.js`, `dos.js`, `rerolls.js`, `chisq.js`, `montecarlo.js`, `awards.js`, `summarize.js` + tests with known values and seeded Monte Carlo (percentile of a simulated fair stat is itself ~uniform).
-- [ ] Fun tab; awards; "1 in N nights" labels; help text (the module measures the RNG, not the player; multiple-comparisons caveat).
-- [ ] `ui/summary-card.js`: GM button "Post tonight's summary" (public or GM whisper), waits for Dice So Nice if present.
-- Acceptance: under 1 s for a 600-dice session at K = 10 000 on the GM machine; tests green; tag `v0.3.0`.
+### M3 — Fun aggregates and honest statistics (2 sessions) — built 2026-09-15
+- [x] `stats/rng.js` (mulberry32, string seeds), `streaks.js`, `dos.js` (split + clutch/heartbreaker/wasted 20), `rerolls.js` (hero-point pairs from enrichment or HTML, fortune pairs), `chisq.js` (incomplete gamma, auto bins), `montecarlo.js` (one loop computes eight statistics per simulated evening; sorted samples; two-tailed placement; "1 in N" floors at 1/(K+1)), `awards.js`, `summarize.js` (`groupSummary`, `campaignTrend`) + `test/stats-fun.test.js` (known values, determinism, corner cases).
+- [x] `ui/fun-model.js` (pure; same visibility/grouping rules as Tonight) + test; `ui/fun-decorate.js` (i18n lines, rarity tails, moments); Fun tab with awards box, party card and per-player cards (histogram, DoS bar, streaks with times and rarity, moments, rerolls, fortune, per-stat chips); memoized per session/options; computed only when the tab is shown.
+- [x] `ui/summary-card.js`: header button → DialogV2 (everyone / GMs only) → chat card with party mood, leaderboard and awards, flagged so the normalizer ignores it. Rendered and checked on the dev instance.
+- Acceptance: 110-dice evening at K = 10 000 computed in 57 ms on the dev GM client (the 600-dice budget of 1 s has 15× headroom); 60 tests green. Lesson: Handlebars partials referenced by path must be pre-registered with `foundry.applications.handlebars.loadTemplates` (the mixin only loads PARTS). Tag `v0.3.0` pending I4.
 
 ### M3.5 — Polish, export, history, player view (1–2 sessions)
 - [ ] `ui/export.js` CSV/JSON (per session and all); page `text.content` summary; History tab (`summarizeCampaign`, trends).

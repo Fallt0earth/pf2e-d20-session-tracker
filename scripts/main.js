@@ -31,9 +31,13 @@ function registerHelpers() {
   Handlebars.registerHelper("d20eq", (a, b) => a === b);
 }
 
+const PARTIALS = ["partials/histogram.hbs", "partials/fun-group.hbs"].map((p) => `modules/${MODULE_ID}/templates/tracker/${p}`);
+
 Hooks.once("init", () => {
   registerSettings(() => app?.notify());
   registerHelpers();
+  // Partials referenced by path inside PARTS templates must be pre-registered; the mixin only loads PARTS.
+  foundry.applications.handlebars.loadTemplates(PARTIALS).catch((e) => console.error(`${MODULE_TITLE} | partials failed to load`, e));
   registerEntryPoints(open);
   registerRollerEnrichment();
   game.modules.get(MODULE_ID).api = buildApi({

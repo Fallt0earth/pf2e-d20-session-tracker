@@ -24,6 +24,7 @@
         <button type="button" class="icon {{#unless captureEnabled}}paused{{/unless}}" data-action="togglePause" title="{{#if captureEnabled}}{{localize "PF2E-D20.Controls.Pause"}}{{else}}{{localize "PF2E-D20.Controls.Resume"}}{{/if}}">
           <i class="fa-solid {{#if captureEnabled}}fa-pause{{else}}fa-play{{/if}}"></i>
         </button>
+        <button type="button" class="icon" data-action="postSummary" title="{{localize "PF2E-D20.Summary.Post"}}"><i class="fa-solid fa-scroll"></i></button>
       {{/if}}
     </div>
   </div>

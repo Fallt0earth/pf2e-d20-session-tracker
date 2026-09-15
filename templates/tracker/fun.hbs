@@ -1,0 +1,22 @@
+<section class="tab fun {{tabs.fun.cssClass}}" data-tab="fun" data-group="primary">
+  <div class="fun-body">
+    {{#if fun.empty}}
+      <p class="empty">{{localize "PF2E-D20.Tonight.NoRolls"}}</p>
+    {{else}}
+      {{#if fun.awards.length}}
+        <div class="awards-box">
+          <div class="box-title"><i class="fa-solid fa-trophy"></i> {{localize "PF2E-D20.Fun.Awards"}}</div>
+          <ul class="awards">
+            {{#each fun.awards}}<li><b>{{this.title}}</b> {{this.text}}{{#if this.ties}} <small>({{this.ties}} tied)</small>{{/if}}</li>{{/each}}
+          </ul>
+        </div>
+      {{/if}}
+
+      {{> "modules/pf2e-d20-session-tracker/templates/tracker/partials/fun-group.hbs" g=fun.party party=true}}
+      {{#each fun.groups}}
+        {{> "modules/pf2e-d20-session-tracker/templates/tracker/partials/fun-group.hbs" g=this party=false}}
+      {{/each}}
+      <p class="help"><i class="fa-solid fa-circle-info"></i> {{localize "PF2E-D20.Fun.Help"}} {{#if fun.iterations}}{{localize "PF2E-D20.Fun.McNote" iterations=fun.iterations}}{{/if}}</p>
+    {{/if}}
+  </div>
+</section>

@@ -3,6 +3,9 @@
 import { MODULE_ID } from "../constants.js";
 import { getSetting, setSetting, SETTINGS } from "../settings.js";
 import { buildSessionModel } from "./view-model.js";
+import { buildFunModel } from "./fun-model.js";
+import { decorateFunGroup, decorateAwards } from "./fun-decorate.js";
+import { postSummary } from "./summary-card.js";
 import { viewOptionsFor } from "./view-options.js";
 import { sessionLabel } from "../sessions/bucket.js";
 
@@ -30,6 +33,7 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
       toggleExclude: TrackerApp.#onToggleExclude,
       deleteSession: TrackerApp.#onDeleteSession,
       resetAll: TrackerApp.#onResetAll,
+      postSummary: TrackerApp.#onPostSummary,
     },
   };
 
@@ -37,6 +41,7 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     header: { template: T("header") },
     tabs: { template: "templates/generic/tab-navigation.hbs" },
     tonight: { template: T("tonight"), scrollable: [".tonight-body"] },
+    fun: { template: T("fun"), scrollable: [".fun-body"] },
     sessions: { template: T("sessions"), scrollable: [".sessions-body"] },
   };
 
@@ -44,6 +49,7 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     primary: {
       tabs: [
         { id: "tonight", icon: "fa-solid fa-fire", label: "PF2E-D20.Tabs.Tonight" },
+        { id: "fun", icon: "fa-solid fa-trophy", label: "PF2E-D20.Tabs.Fun" },
         { id: "sessions", icon: "fa-solid fa-calendar-days", label: "PF2E-D20.Tabs.Sessions" },
       ],
       initial: "tonight",
@@ -57,6 +63,27 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.sessionKey = null;
     this.expanded = new Set();
     this.showAll = false;
+    this.funCache = { key: null, value: null };
+  }
+
+  /** Fun model for the selected session, memoized by session, record count and view options. */
+  _funModel(records, opts) {
+    const iterations = getSetting(SETTINGS.mcIterations);
+    const sig = JSON.stringify([this.sessionKey, records.length, records.at(-1)?.id, opts.countMode, opts.groupBy, opts.includeGM, opts.includeRaw, opts.viewer.userId, iterations]);
+    if (this.funCache.key === sig) return this.funCache.value;
+    const t0 = performance.now();
+    const model = buildFunModel(records, opts, { iterations, seed: this.sessionKey });
+    const byId = new Map([...model.groups.map((g) => [g.id, g]), ["party", model.party]]);
+    const value = {
+      empty: model.empty,
+      iterations,
+      party: decorateFunGroup(model.party),
+      groups: model.groups.map(decorateFunGroup),
+      awards: decorateAwards(model.awards, byId),
+      ms: Math.round(performance.now() - t0),
+    };
+    this.funCache = { key: sig, value };
+    return value;
   }
 
   /** Re-render if this session (or any, when null) is what is displayed. */
@@ -88,7 +115,10 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
       this.sessionKey = newest?.key ?? this.source.currentKey();
     }
     const opts = this._viewOptions();
-    const model = buildSessionModel(this.source.getSession(this.sessionKey), opts);
+    const records = this.source.getSession(this.sessionKey);
+    const model = buildSessionModel(records, opts);
+    const activeTab = this.tabGroups.primary ?? TrackerApp.TABS.primary.initial;
+    context.fun = activeTab === "fun" ? this._funModel(records, opts) : { empty: true, deferred: true };
     Object.assign(context, {
       isGM: game.user.isGM,
       preview: this.source.kind === "preview",
@@ -119,13 +149,34 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
   _onRender(context, options) {
     super._onRender?.(context, options);
     const select = this.element.querySelector('select[name="session"]');
-    select?.addEventListener("change", (ev) => { this.sessionKey = ev.currentTarget.value; this.render({ parts: ["header", "tonight"] }); });
+    select?.addEventListener("change", (ev) => { this.sessionKey = ev.currentTarget.value; this.render({ parts: ["header", "tonight", "fun"] }); });
   }
 
-  static async #onSetGroupBy(_event, target) { await setSetting(SETTINGS.groupBy, target.dataset.value); this.render({ parts: ["header", "tonight"] }); }
-  static async #onSetCountMode(_event, target) { await setSetting(SETTINGS.countMode, target.dataset.value); this.render({ parts: ["header", "tonight"] }); }
-  static async #onToggleGM() { await setSetting(SETTINGS.includeGM, !getSetting(SETTINGS.includeGM)); this.render({ parts: ["header", "tonight"] }); }
-  static async #onToggleRaw() { await setSetting(SETTINGS.includeRaw, !getSetting(SETTINGS.includeRaw)); this.render({ parts: ["header", "tonight"] }); }
+  /** Switching to the Fun tab computes its model on demand (Monte Carlo), so re-render that part. */
+  changeTab(tab, group, options) {
+    super.changeTab(tab, group, options);
+    if (tab === "fun") this.render({ parts: ["fun"] });
+  }
+
+  static async #onSetGroupBy(_event, target) { await setSetting(SETTINGS.groupBy, target.dataset.value); this.render({ parts: ["header", "tonight", "fun"] }); }
+  static async #onSetCountMode(_event, target) { await setSetting(SETTINGS.countMode, target.dataset.value); this.render({ parts: ["header", "tonight", "fun"] }); }
+  static async #onToggleGM() { await setSetting(SETTINGS.includeGM, !getSetting(SETTINGS.includeGM)); this.render({ parts: ["header", "tonight", "fun"] }); }
+  static async #onToggleRaw() { await setSetting(SETTINGS.includeRaw, !getSetting(SETTINGS.includeRaw)); this.render({ parts: ["header", "tonight", "fun"] }); }
+  static async #onPostSummary() {
+    if (!game.user.isGM) return;
+    const whisper = await foundry.applications.api.DialogV2.wait({
+      window: { title: game.i18n.localize("PF2E-D20.Summary.Post") },
+      content: `<p>${game.i18n.localize("PF2E-D20.Summary.PostHint")}</p>`,
+      buttons: [
+        { action: "public", label: game.i18n.localize("PF2E-D20.Summary.Public"), icon: "fa-solid fa-comments", default: true },
+        { action: "whisper", label: game.i18n.localize("PF2E-D20.Summary.Whisper"), icon: "fa-solid fa-user-secret" },
+        { action: "cancel", label: game.i18n.localize("Cancel"), icon: "fa-solid fa-xmark" },
+      ],
+      rejectClose: false,
+    });
+    if (whisper !== "public" && whisper !== "whisper") return;
+    await postSummary(this.source, this.sessionKey, { whisper: whisper === "whisper" });
+  }
   static #onToggleExpand(_event, target) {
     const id = target.dataset.id;
     if (this.expanded.has(id)) this.expanded.delete(id); else this.expanded.add(id);
