@@ -33,6 +33,9 @@ instance at http://your-docker-host:30000 through the headless harness (`foundry
 | + | Journal write size | 108 records of one evening | compact page | 30 046 bytes ≈ 278 B/record (`verify-m2`) | — |
 | + | Fun tab compute time | open the Fun tab on a 110-dice evening, K = 10 000 | under 1 s | 57 ms (2026-09-15, GM client) | — |
 | + | Summary chat card | header button → Everyone | card with mood, leaderboard, awards; no records extracted from it | PASS 2026-09-15 (screenshot; normalizer yields 0 records) | — |
+| + | History tab | open on one recorded evening | all-time card, rank rows, evening grid, sparkline | PASS 2026-09-15 (screenshot) | — |
+| + | CSV export | `exportRecords(store, key, "csv")` | header + one row per visible die, download triggered | PASS 2026-09-15 (112 rows, `d20-2026-09-15.csv`) | — |
+| + | Journal page text | any write | readable per-player table in the hidden page | PASS 2026-09-15 (532 chars) | — |
 | + | Player view hides tonight's secret rolls | PlayerA `api.summarize` / window | secret count 0 for the current evening | PASS 2026-09-15 (window screenshot; API after the view-options fix: 111 stored, 14 secret, 97 visible, own row secret 0) | — |
 
 ## How to re-run

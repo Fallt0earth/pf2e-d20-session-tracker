@@ -21,7 +21,9 @@ const pureFiles = [
   "scripts/sessions/bucket.js",
   "scripts/ui/view-model.js",
   "scripts/ui/fun-model.js",
+  "scripts/ui/history-model.js",
   "scripts/storage/codec.js",
+  "scripts/storage/csv.js",
   "scripts/util/queue.js",
 ];
 

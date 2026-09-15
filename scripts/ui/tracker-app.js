@@ -4,8 +4,10 @@ import { MODULE_ID } from "../constants.js";
 import { getSetting, setSetting, SETTINGS } from "../settings.js";
 import { buildSessionModel } from "./view-model.js";
 import { buildFunModel } from "./fun-model.js";
+import { buildHistoryModel } from "./history-model.js";
 import { decorateFunGroup, decorateAwards } from "./fun-decorate.js";
 import { postSummary } from "./summary-card.js";
+import { exportRecords } from "./export.js";
 import { viewOptionsFor } from "./view-options.js";
 import { sessionLabel } from "../sessions/bucket.js";
 
@@ -34,6 +36,8 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
       deleteSession: TrackerApp.#onDeleteSession,
       resetAll: TrackerApp.#onResetAll,
       postSummary: TrackerApp.#onPostSummary,
+      exportSession: TrackerApp.#onExport,
+      exportAll: TrackerApp.#onExport,
     },
   };
 
@@ -42,6 +46,7 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     tabs: { template: "templates/generic/tab-navigation.hbs" },
     tonight: { template: T("tonight"), scrollable: [".tonight-body"] },
     fun: { template: T("fun"), scrollable: [".fun-body"] },
+    history: { template: T("history"), scrollable: [".history-body"] },
     sessions: { template: T("sessions"), scrollable: [".sessions-body"] },
   };
 
@@ -50,6 +55,7 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
       tabs: [
         { id: "tonight", icon: "fa-solid fa-fire", label: "PF2E-D20.Tabs.Tonight" },
         { id: "fun", icon: "fa-solid fa-trophy", label: "PF2E-D20.Tabs.Fun" },
+        { id: "history", icon: "fa-solid fa-chart-line", label: "PF2E-D20.Tabs.History" },
         { id: "sessions", icon: "fa-solid fa-calendar-days", label: "PF2E-D20.Tabs.Sessions" },
       ],
       initial: "tonight",
@@ -119,6 +125,7 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const model = buildSessionModel(records, opts);
     const activeTab = this.tabGroups.primary ?? TrackerApp.TABS.primary.initial;
     context.fun = activeTab === "fun" ? this._funModel(records, opts) : { empty: true, deferred: true };
+    context.history = activeTab === "history" ? this._historyModel(opts) : { empty: true, deferred: true };
     Object.assign(context, {
       isGM: game.user.isGM,
       preview: this.source.kind === "preview",
@@ -146,16 +153,45 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return { ...model, party: row(model.party), rows: model.rows.map(row) };
   }
 
+  /** History across every non-excluded evening, decorated for the template. */
+  _historyModel(opts) {
+    const sessions = this.source.listSessions().filter((s) => !s.excluded).sort((a, b) => (a.key < b.key ? -1 : 1))
+      .map((s) => ({ key: s.key, label: s.label, records: this.source.getSession(s.key) }));
+    const m = buildHistoryModel(sessions, opts);
+    const band = (b) => game.i18n.localize(`PF2E-D20.Band.${b}`);
+    const spark = (points) => points.map((p) => {
+      const z = p.zGuard === "none" || p.z === null ? 0 : Math.max(-3, Math.min(3, p.z));
+      return { key: p.key, z: p.z === null ? "–" : p.z.toFixed(2), n: p.n, h: Math.round((Math.abs(z) / 3) * 100), cls: z > 0 ? "pos" : z < 0 ? "neg" : "zero" };
+    });
+    const groups = m.groups.map((g) => ({
+      ...g, bandLabel: band(g.band), thin: g.allTime.zGuard === "thin", none: g.allTime.zGuard === "none",
+      nat20RateLabel: g.nat20Rate === null ? "–" : `${(g.nat20Rate * 100).toFixed(1)}%`,
+      spark: spark(g.points),
+    }));
+    const sessionsOut = m.sessions.slice().reverse().map((s) => ({
+      ...s,
+      cellList: m.groups.map((g) => { const c = s.cells[g.id]; return c ? { present: true, ...c, thin: c.zGuard === "thin", none: c.zGuard === "none" } : { present: false }; }),
+    }));
+    return { ...m, groups, sessions: sessionsOut, party: { ...m.party, bandLabel: band(m.party.band), evenings: m.sessions.length } };
+  }
+
   _onRender(context, options) {
     super._onRender?.(context, options);
     const select = this.element.querySelector('select[name="session"]');
     select?.addEventListener("change", (ev) => { this.sessionKey = ev.currentTarget.value; this.render({ parts: ["header", "tonight", "fun"] }); });
   }
 
-  /** Switching to the Fun tab computes its model on demand (Monte Carlo), so re-render that part. */
+  /** The Fun and History tabs compute their models on demand, so re-render that part on switch. */
   changeTab(tab, group, options) {
     super.changeTab(tab, group, options);
-    if (tab === "fun") this.render({ parts: ["fun"] });
+    if (tab === "fun" || tab === "history") this.render({ parts: [tab] });
+  }
+
+  static #onExport(_event, target) {
+    const key = target.dataset.key ?? null;
+    const format = target.dataset.format ?? "csv";
+    const r = exportRecords(this.source, key, format);
+    ui.notifications.info(game.i18n.format("PF2E-D20.Export.Done", { name: r.name, count: r.count }));
   }
 
   static async #onSetGroupBy(_event, target) { await setSetting(SETTINGS.groupBy, target.dataset.value); this.render({ parts: ["header", "tonight", "fun"] }); }

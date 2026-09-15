@@ -1,23 +1,42 @@
 # PF2e d20 Session Tracker
 
-A Foundry VTT v13 module for the Pathfinder Second Edition system. It records every natural d20 each player rolls, groups the rolls by evening of play, and shows who ran hot or cold tonight with honest statistics, plus fun session aggregates (full 1–20 result tables, streaks, awards).
+A Foundry VTT v13 module for the Pathfinder Second Edition system. It records every natural d20 each player rolls, groups the rolls by evening of play, and shows who ran hot or cold tonight with honest statistics, plus fun session aggregates: full 1–20 result tables, streaks, degree-of-success splits, hero-point reroll returns, awards, and a chat summary card.
 
-Status: pre-alpha, under construction. See `docs/PLAN.md` for the plan and current state, `docs/SCOPE.md` for requirements and decisions.
+## What it measures
+Luck is the natural die only. Totals and outcomes mix in modifiers and DCs, so they are not luck. Everything is compared with a fair d20 (mean 10.5): the leaderboard number is a z-score that normalises for how many dice each player rolled, greyed out below 15 dice. "One in N nights" labels come from simulated fair evenings with the same number of dice. The module measures the dice, not the players.
 
 ## Requirements
-- Foundry VTT 13.351 (v13 line)
-- PF2e system 7.12.x
+- Foundry VTT 13.351 (v13 line), PF2e system 7.12.x
 - No dependency on Dice So Nice, socketlib or libWrapper
+- Works with PF2e Toolbelt's Target Helper (saves rolled from damage cards are captured) and the PF2e Flat Check module (V3.x cards are read)
+
+## How it works
+- The **active GM client** is the single writer. It normalises every d20-bearing chat message (checks, saves, attacks, initiative, flat checks, raw `/r 1d20`, both dice of fortune/misfortune, both dice of a hero-point reroll) into one record per physical die and stores them in a hidden journal, one page per evening.
+- An **evening** is bucketed by the message timestamp in the world timezone with a boundary hour (default 06:00 America/Chicago), so a game running past midnight stays one session. No start/stop button.
+- Players read the same journal; the window filters blind and secret rolls out of their view for the current evening (configurable).
+- If the GM reloads or the server restarts mid-evening, a catch-up scans tonight's chat for anything missed. Deleting the chat log does not affect stored evenings.
 
 ## Install
 Once released: Foundry setup → Add-on Modules → Install Module → paste the manifest URL from the latest GitHub release. On The Forge: Bazaar → Marketplace → Toolbox → Install from Manifest.
 
-## Development
-- `npm install` then `npm test` (pure stats/normalizer layer, `node --test`) and `npm run lint`.
-- Dev instance on the NAS: `.\dev\deploy.ps1` syncs the module; `.\dev\deploy.ps1 -Init` for the first start. See `docs/nas-quickstart.MD`.
+## Using it
+Open the window from the token controls (d20 icon), a keybinding you assign, or `game.modules.get("pf2e-d20-session-tracker").api.open()`.
+- **Tonight:** party headline and the leaderboard (n, mean, luck z, percentile, Nat 20 and Nat 1 vs expected). Expand a row for the 1–20 histogram.
+- **Fun:** awards, streaks with times, degree-of-success bar, hero-point and fortune returns, clutch / heartbreaker / wasted-20 moments, chi-square shape test.
+- **History:** all-time rank, best and worst evening, a z trend per player.
+- **Sessions:** rename, exclude, export CSV/JSON, catch-up, pause capture, reset (GM).
+- The scroll icon (GM) posts the evening's summary card to chat, to everyone or to GMs only.
+
+## Settings (GM)
+Timezone and boundary hour; capture on/off (pause while prepping); count raw d20 rolls; minimum dice to list an evening; player access (whole table / own rolls / GM only); blind-roll policy for player views; Monte Carlo iterations.
 
 ## Privacy note
 Blind and secret roll results are stored in a GM-only journal and filtered out of the player-facing view. Like blind chat messages themselves, they are technically readable through the browser console by anyone with a client; the filter is a UI guarantee, not a cryptographic one.
+
+## Development
+- `npm install`, then `npm test` (pure stats/normalizer layer under `node --test`) and `npm run lint` (ESLint also enforces that the pure layer imports nothing from Foundry).
+- `npm run build:macro` bundles `macros/analyze.js`, a pasteable script macro that validates the normaliser against a world's recent chat.
+- Dev instance and headless verification: see `docs/PLAN.md`, `docs/TESTING.md`, `dev/e2e/`.
 
 ## License
 MIT. Patterns borrowed with attribution from Simple d20 stats (Yosoy-Ed), Roll Tracker (drexl93) and dice-stats (jacobwojoski), all MIT.

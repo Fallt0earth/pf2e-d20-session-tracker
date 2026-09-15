@@ -365,11 +365,13 @@ Re-scoped 2026-09-15: the macro is a **validation tool** for the normalizer agai
 - [x] `ui/summary-card.js`: header button → DialogV2 (everyone / GMs only) → chat card with party mood, leaderboard and awards, flagged so the normalizer ignores it. Rendered and checked on the dev instance.
 - Acceptance: 110-dice evening at K = 10 000 computed in 57 ms on the dev GM client (the 600-dice budget of 1 s has 15× headroom); 60 tests green. Lesson: Handlebars partials referenced by path must be pre-registered with `foundry.applications.handlebars.loadTemplates` (the mixin only loads PARTS). Tag `v0.3.0` pending I4.
 
-### M3.5 — Polish, export, history, player view (1–2 sessions)
-- [ ] `ui/export.js` CSV/JSON (per session and all); page `text.content` summary; History tab (`summarizeCampaign`, trends).
-- [ ] `playerAccess` / `blindPolicy` enforcement + tests; README (install, settings, privacy note), CHANGELOG; tag `v1.0.0`.
-- [ ] **Forge gate 3:** install `v1.0.0`; player account walkthrough (blind roll absent from the player view, own-rows mode).
-- Acceptance: SCOPE Must 1–5 and Should 6–11 demonstrably met; v1 done.
+### M3.5 — Polish, export, history, player view (1–2 sessions) — built 2026-09-15
+- [x] `storage/csv.js` (pure, tested) + `ui/export.js` (CSV/JSON per evening and all, viewer-filtered, `saveDataToFile`); page `text.content` summary table on every write (`storage/page-text.js`), page title follows a rename.
+- [x] History tab: `ui/history-model.js` (pure, tested) — all-time rank with best/worst evening and Nat 20 rate, z sparkline per player, evening × player grid; excluded evenings left out.
+- [x] `playerAccess` / `blindPolicy` enforced in one place (`ui/view-options.js`) for window, API, exports and the summary card; tests in `test/view-model.test.js`.
+- [x] README, CHANGELOG.
+- [ ] Tag `v1.0.0` (needs I4) and **Forge gate 3**: install; player account walkthrough (blind roll absent from the player view, own-rows mode).
+- Acceptance: SCOPE Must 1–5 and Should 7–11 met on the dev instance; Should 6 (history backfill) deferred post-1.0 by David; v1 code complete pending the Forge gates.
 
 ### M4 — Foundry v14 / PF2e 8.x pass (1 session, when David upgrades the Forge game)
 - [ ] Bump `compatibility`; confirm the `pf2e.reroll` options-object form (already handled); re-run SCOPE §9 on 14.36x + PF2e 8.5 and `pf2-flat-check` 4.0.0; Forge gate.

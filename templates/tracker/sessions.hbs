@@ -5,6 +5,7 @@
         <button type="button" class="pill" data-action="catchUp" title="{{localize "PF2E-D20.Sessions.CatchUpHint"}}"><i class="fa-solid fa-clock-rotate-left"></i> {{localize "PF2E-D20.Controls.CatchUp"}}</button>
         <button type="button" class="pill danger" data-action="resetAll"><i class="fa-solid fa-trash"></i> {{localize "PF2E-D20.Sessions.ResetAll"}}</button>
       {{/if}}
+      <button type="button" class="pill" data-action="exportAll" data-format="csv" title="{{localize "PF2E-D20.Export.AllHint"}}"><i class="fa-solid fa-file-csv"></i> {{localize "PF2E-D20.Export.All"}}</button>
       <span class="spacer"></span>
       <button type="button" class="pill {{#if showAll}}active{{/if}}" data-action="toggleShowAll">{{localize "PF2E-D20.Controls.ShowAll"}}</button>
     </div>
@@ -19,6 +20,8 @@
             <td>{{d20time this.lastTs}}</td>
             <td class="row-actions">
               <button type="button" class="pill" data-action="selectSession" data-key="{{this.key}}"><i class="fa-solid fa-fire"></i> {{localize "PF2E-D20.Tabs.Tonight"}}</button>
+              <button type="button" class="icon plain" data-action="exportSession" data-key="{{this.key}}" data-format="csv" title="{{localize "PF2E-D20.Export.Csv"}}"><i class="fa-solid fa-file-csv"></i></button>
+              <button type="button" class="icon plain" data-action="exportSession" data-key="{{this.key}}" data-format="json" title="{{localize "PF2E-D20.Export.Json"}}"><i class="fa-solid fa-file-code"></i></button>
               {{#if ../isGM}}
                 <button type="button" class="icon plain" data-action="renameSession" data-key="{{this.key}}" title="{{localize "PF2E-D20.Sessions.Rename"}}"><i class="fa-solid fa-pen"></i></button>
                 <button type="button" class="icon plain" data-action="toggleExclude" data-key="{{this.key}}" title="{{localize "PF2E-D20.Sessions.ToggleExclude"}}"><i class="fa-solid {{#if this.excluded}}fa-eye{{else}}fa-eye-slash{{/if}}"></i></button>

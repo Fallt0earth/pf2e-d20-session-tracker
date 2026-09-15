@@ -39,15 +39,15 @@ export function readPage(page) {
   return { key, meta: f.meta ?? {}, records: decode(f.data, key) };
 }
 
-export async function writePage(journal, key, records, meta = {}) {
+export async function writePage(journal, key, records, meta = {}, text = "") {
   const flags = { v: SCHEMA_VERSION, key, meta, data: encode(records) };
   const page = pageFor(journal, key);
   if (page) {
-    await page.update({ [`flags.${MODULE_ID}`]: flags });
+    await page.update({ [`flags.${MODULE_ID}`]: flags, "text.content": text, name: meta.label || key });
     return page;
   }
   const [created] = await journal.createEmbeddedDocuments("JournalEntryPage", [
-    { name: key, type: "text", text: { content: "", format: CONST.JOURNAL_ENTRY_PAGE_FORMATS.HTML }, flags: { [MODULE_ID]: flags } },
+    { name: meta.label || key, type: "text", text: { content: text, format: CONST.JOURNAL_ENTRY_PAGE_FORMATS.HTML }, flags: { [MODULE_ID]: flags } },
   ]);
   return created;
 }

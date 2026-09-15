@@ -135,5 +135,21 @@
   "PF2E-D20.Summary.Whisper": "GMs only",
   "PF2E-D20.Summary.Title": "d20 report: {label}",
   "PF2E-D20.Summary.Mood": "{n} dice, mean {mean}, luck z {z} ({band}), {pct}th percentile of a fair night.",
-  "PF2E-D20.Summary.Foot": "Natural d20s only, measured against a fair die. * fewer than 15 dice."
+  "PF2E-D20.Summary.Foot": "Natural d20s only, measured against a fair die. * fewer than 15 dice.",
+
+  "PF2E-D20.History.Empty": "No evenings recorded yet.",
+  "PF2E-D20.History.AllTime": "All time",
+  "PF2E-D20.History.Evenings": "evenings",
+  "PF2E-D20.History.Rank": "All-time rank",
+  "PF2E-D20.History.Nat20Rate": "Nat 20 rate",
+  "PF2E-D20.History.Best": "best evening",
+  "PF2E-D20.History.Worst": "worst evening",
+  "PF2E-D20.History.Trend": "trend (z by evening)",
+  "PF2E-D20.History.Help": "Luck z per evening and all time. Evenings marked excluded on the Sessions tab are left out. Bars show z clamped to ±3.",
+
+  "PF2E-D20.Export.All": "Export all (CSV)",
+  "PF2E-D20.Export.AllHint": "Download every evening you can see as one CSV file.",
+  "PF2E-D20.Export.Csv": "Download this evening as CSV",
+  "PF2E-D20.Export.Json": "Download this evening as JSON",
+  "PF2E-D20.Export.Done": "Saved {name} ({count} dice)."
 }

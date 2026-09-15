@@ -5,6 +5,7 @@ import { sessionKeyFor, sessionLabel, compareKeys } from "../sessions/bucket.js"
 import { bucketOptions } from "../settings.js";
 import { WriteQueue } from "../util/queue.js";
 import { findLog, ensureLog, readPage, writePage, writeMeta, deletePage } from "./journal.js";
+import { pageSummaryHtml } from "./page-text.js";
 
 export class JournalStore {
   constructor() {
@@ -133,7 +134,9 @@ export class JournalStore {
     this.journal ??= await ensureLog();
     const s = this.sessions.get(key);
     if (!s) return;
-    const page = await writePage(this.journal, key, s.records, s.meta);
+    let text = "";
+    try { text = pageSummaryHtml(key, s.records, s.meta); } catch (e) { console.warn("d20 tracker | page text skipped", e); }
+    const page = await writePage(this.journal, key, s.records, s.meta, text);
     s.pageId = page.id;
   }
 
@@ -144,7 +147,7 @@ export class JournalStore {
     const s = this._session(key);
     s.meta = { ...s.meta, ...patch };
     this.journal ??= await ensureLog();
-    if (s.pageId) await writeMeta(this.journal, key, s.meta); else await this._flush(key);
+    if (s.pageId && !("label" in patch)) await writeMeta(this.journal, key, s.meta); else await this._flush(key); // a rename also retitles the page
     this._emit(key);
   }
 
