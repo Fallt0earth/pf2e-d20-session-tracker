@@ -1,0 +1,31 @@
+<header class="tracker-header">
+  <div class="row">
+    <label class="session-picker">
+      <span>{{localize "PF2E-D20.Controls.Session"}}</span>
+      <select name="session">
+        {{#each sessions}}
+          <option value="{{this.key}}" {{#if this.selected}}selected{{/if}}>{{this.label}}{{#if this.isCurrent}} ★{{/if}} ({{this.n}})</option>
+        {{/each}}
+      </select>
+    </label>
+    <div class="toggles">
+      <button type="button" class="pill {{#if (d20eq opts.groupBy "user")}}active{{/if}}" data-action="setGroupBy" data-value="user">{{localize "PF2E-D20.Controls.GroupByUser"}}</button>
+      <button type="button" class="pill {{#if (d20eq opts.groupBy "actor")}}active{{/if}}" data-action="setGroupBy" data-value="actor">{{localize "PF2E-D20.Controls.GroupByActor"}}</button>
+      <span class="sep"></span>
+      <button type="button" class="pill {{#if (d20eq opts.countMode "all")}}active{{/if}}" data-action="setCountMode" data-value="all">{{localize "PF2E-D20.Controls.CountAll"}}</button>
+      <button type="button" class="pill {{#if (d20eq opts.countMode "kept")}}active{{/if}}" data-action="setCountMode" data-value="kept">{{localize "PF2E-D20.Controls.CountKept"}}</button>
+      <span class="sep"></span>
+      <button type="button" class="pill {{#if opts.includeGM}}active{{/if}}" data-action="toggleGM">{{localize "PF2E-D20.Controls.IncludeGM"}}</button>
+      <button type="button" class="pill {{#if opts.includeRaw}}active{{/if}}" data-action="toggleRaw">{{localize "PF2E-D20.Controls.IncludeRaw"}}</button>
+    </div>
+    <div class="actions">
+      <button type="button" class="icon" data-action="refresh" title="{{localize "PF2E-D20.Controls.Refresh"}}"><i class="fa-solid fa-rotate"></i></button>
+      {{#if isGM}}
+        <button type="button" class="icon {{#unless captureEnabled}}paused{{/unless}}" data-action="togglePause" title="{{#if captureEnabled}}{{localize "PF2E-D20.Controls.Pause"}}{{else}}{{localize "PF2E-D20.Controls.Resume"}}{{/if}}">
+          <i class="fa-solid {{#if captureEnabled}}fa-pause{{else}}fa-play{{/if}}"></i>
+        </button>
+      {{/if}}
+    </div>
+  </div>
+  {{#if preview}}<p class="note"><i class="fa-solid fa-flask"></i> {{localize "PF2E-D20.Source.Preview"}}</p>{{/if}}
+</header>

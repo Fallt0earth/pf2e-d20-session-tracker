@@ -1,0 +1,11 @@
+node_modules/
+backups/
+dist/
+*.zip
+license_key.txt
+dev/*.env
+!dev/foundry-dev.env.example
+test/fixtures/raw/
+*.log
+.DS_Store
+Thumbs.db

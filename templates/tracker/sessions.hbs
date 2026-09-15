@@ -1,0 +1,33 @@
+<section class="tab sessions {{tabs.sessions.cssClass}}" data-tab="sessions" data-group="primary">
+  <div class="sessions-body">
+    <div class="sessions-toolbar">
+      {{#if isGM}}
+        <button type="button" class="pill" data-action="catchUp" title="{{localize "PF2E-D20.Sessions.CatchUpHint"}}"><i class="fa-solid fa-clock-rotate-left"></i> {{localize "PF2E-D20.Controls.CatchUp"}}</button>
+        <button type="button" class="pill danger" data-action="resetAll"><i class="fa-solid fa-trash"></i> {{localize "PF2E-D20.Sessions.ResetAll"}}</button>
+      {{/if}}
+      <span class="spacer"></span>
+      <button type="button" class="pill {{#if showAll}}active{{/if}}" data-action="toggleShowAll">{{localize "PF2E-D20.Controls.ShowAll"}}</button>
+    </div>
+    <table class="sessions-list">
+      <thead><tr><th class="who">{{localize "PF2E-D20.Controls.Session"}}</th><th>{{localize "PF2E-D20.Tonight.Dice"}}</th><th>{{localize "PF2E-D20.Sessions.First"}}</th><th>{{localize "PF2E-D20.Sessions.Last"}}</th><th></th></tr></thead>
+      <tbody>
+        {{#each sessions}}
+          <tr class="{{#if this.selected}}selected{{/if}} {{#if this.excluded}}excluded{{/if}}">
+            <td class="who"><b>{{this.label}}</b>{{#if this.isCurrent}} ★{{/if}}{{#if this.excluded}} <em>{{localize "PF2E-D20.Sessions.Excluded"}}</em>{{/if}}{{#unless (d20eq this.label this.autoLabel)}}<small>{{this.autoLabel}}</small>{{/unless}}</td>
+            <td>{{this.n}}</td>
+            <td>{{d20time this.firstTs}}</td>
+            <td>{{d20time this.lastTs}}</td>
+            <td class="row-actions">
+              <button type="button" class="pill" data-action="selectSession" data-key="{{this.key}}"><i class="fa-solid fa-fire"></i> {{localize "PF2E-D20.Tabs.Tonight"}}</button>
+              {{#if ../isGM}}
+                <button type="button" class="icon plain" data-action="renameSession" data-key="{{this.key}}" title="{{localize "PF2E-D20.Sessions.Rename"}}"><i class="fa-solid fa-pen"></i></button>
+                <button type="button" class="icon plain" data-action="toggleExclude" data-key="{{this.key}}" title="{{localize "PF2E-D20.Sessions.ToggleExclude"}}"><i class="fa-solid {{#if this.excluded}}fa-eye{{else}}fa-eye-slash{{/if}}"></i></button>
+                <button type="button" class="icon plain danger" data-action="deleteSession" data-key="{{this.key}}" title="{{localize "PF2E-D20.Sessions.Delete"}}"><i class="fa-solid fa-trash"></i></button>
+              {{/if}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+</section>

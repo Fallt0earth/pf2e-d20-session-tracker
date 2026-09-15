@@ -1,0 +1,147 @@
+{
+ "found": true,
+ "buttons": [
+  {
+   "tag": "A",
+   "action": "dismissMessage",
+   "cls": "message-dismiss",
+   "text": ""
+  },
+  {
+   "tag": "SECTION",
+   "action": "expandRoll",
+   "cls": "dice-roll damage-roll",
+   "text": "6d6 \n        \n        \n    \n        \n   "
+  },
+  {
+   "tag": "BUTTON",
+   "action": null,
+   "cls": "pf2e-toolbelt-target-toggleDamageRows",
+   "text": ""
+  },
+  {
+   "tag": "BUTTON",
+   "action": "applyDamage",
+   "cls": "",
+   "text": "Damage"
+  },
+  {
+   "tag": "BUTTON",
+   "action": "applyDamage",
+   "cls": "half-damage",
+   "text": "Half"
+  },
+  {
+   "tag": "BUTTON",
+   "action": "applyDamage",
+   "cls": "",
+   "text": "Double"
+  },
+  {
+   "tag": "BUTTON",
+   "action": "shieldBlock",
+   "cls": "dice-total-shield-btn",
+   "text": "Block"
+  },
+  {
+   "tag": "A",
+   "action": "roll-save",
+   "cls": "",
+   "text": ""
+  },
+  {
+   "tag": "A",
+   "action": "ping-target",
+   "cls": "",
+   "text": ""
+  },
+  {
+   "tag": "BUTTON",
+   "action": "target-applyDamage",
+   "cls": "",
+   "text": "Damage"
+  },
+  {
+   "tag": "BUTTON",
+   "action": "target-applyDamage",
+   "cls": "half-damage",
+   "text": "Half"
+  },
+  {
+   "tag": "BUTTON",
+   "action": "target-applyDamage",
+   "cls": "",
+   "text": "Double"
+  },
+  {
+   "tag": "BUTTON",
+   "action": "target-shieldBlock",
+   "cls": "dice-total-shield-btn",
+   "text": "Block"
+  }
+ ],
+ "clicked": true,
+ "flagsAfter": {
+  "targetHelper": {
+   "type": "damage",
+   "isRegen": false,
+   "saveVariants": {
+    "null": {
+     "dc": 17,
+     "basic": true,
+     "statistic": "reflex",
+     "saves": {
+      "wziVXf0HEBZFqNCA": {
+       "die": 14,
+       "dosAdjustments": {},
+       "modifiers": [
+        {
+         "excluded": false,
+         "label": "Dexterity",
+         "modifier": 0,
+         "slug": "dex"
+        },
+        {
+         "excluded": false,
+         "label": "Untrained",
+         "modifier": 0,
+         "slug": "proficiency"
+        }
+       ],
+       "notes": [],
+       "private": false,
+       "roll": "{\"class\":\"CheckRoll\",\"options\":{\"type\":\"saving-throw\",\"action\":null,\"dice\":\"1d20\",\"domains\":[\"reflex\",\"dex-based\",\"saving-throw\",\"all\",\"check\",\"reflex-check\"],\"isReroll\":false,\"totalModifier\":0,\"damaging\":false,\"rollerId\":\"buEre60zo7McQgrE\",\"showBreakdown\":true,\"degreeOfSuccess\":1},\"dice\":[],\"formula\":\"1d20\",\"terms\":[{\"class\":\"Die\",\"options\":{\"flavor\":null},\"evaluated\":true,\"number\":1,\"faces\":20,\"modifiers\":[],\"results\":[{\"result\":14,\"active\":true}]}],\"total\":14,\"evaluated\":true}",
+       "significantModifiers": [],
+       "statistic": "reflex",
+       "success": "failure",
+       "unadjustedOutcome": "failure",
+       "value": 14
+      }
+     }
+    }
+   },
+   "targets": [
+    "Scene.bDNqK5V55NMIigls.Token.wziVXf0HEBZFqNCA"
+   ],
+   "applied": {},
+   "author": null,
+   "item": null,
+   "options": [],
+   "private": false,
+   "splashIndex": -1,
+   "traits": [],
+   "splashTargets": []
+  }
+ },
+ "newMessages": [
+  {
+   "id": "0vOZgw79lEBbee7n",
+   "type": "damage-roll"
+  },
+  {
+   "id": "3e1lYagBWnxQyEfV",
+   "type": "damage-roll"
+  }
+ ],
+ "html": "<li class=\"chat-message message flexcol \" data-message-id=\"3e1lYagBWnxQyEfV\">\n    <header class=\"message-header flexrow with-image\"><div class=\"portrait token\"><img alt=\"Test Fighter\" src=\"systems/pf2e/icons/default-icons/character.svg\" inert=\"\" style=\"transform: scale(1);\"></div>\n        <h4 class=\"message-sender\">Test Fighter</h4>\n        <span class=\"message-metadata\">\n            <time class=\"message-timestamp\">1s ago</time>\n            <a aria-label=\"Dismiss\" class=\"message-dismiss\" data-action=\"dismissMessage\">\n                <i class=\"fa-solid fa-xmark\" inert=\"\"></i>\n            </a>\n        </span>\n\n\n        <span class=\"flavor-text\"><h4 class=\"action\">\n    <strong>Fireball</strong>\n    \n</h4>\n<div class=\"tags\" data-tooltip-class=\"pf2e\"><span class=\"tag\" data-tooltip=\"PF2E.TraitDescriptionArcane\" data-trait=\"arcane\">Arcane</span><span class=\"tag\" data-tooltip=\"PF2E.TraitDescriptionConcentrate\" data-trait=\"concentrate\">Concentrate</span><span class=\"tag\" data-tooltip=\"PF2E.TraitDescriptionFire\" data-trait=\"fire\">Fire</span><span class=\"tag\" data-tooltip=\"PF2E.TraitDescriptionManipulate\" data-trait=\"manipulate\">Manipulate</span></div>\n<hr><div class=\"tags modifiers\"><span class=\"tag tag_transparent\">6d6 Fire</span></div></span>\n    <span class=\"user\">Gamemaster</span></header>\n    <div class=\"message-content\">\n        <section class=\"dice-roll damage-roll\" data-action=\"expandRoll\" data-tooltip-class=\"pf2e\">\n    \n    <div class=\"dice-result\">\n        <div class=\"dice-formula\">\n            <span class=\"fire damage instance color\" data-tooltip=\"Fire\">6d6 <i class=\"fa-solid fa-fire icon\" inert=\"\"></i></span>\n        </div>\n        <div class=\"dice-tooltip\">\n    <div class=\"wrapper\">\n        <section class=\"tooltip-part damage instance color fire\">\n            <header>\n                Fire <i class=\"fa-solid fa-fire\"></i>\n            </header>\n                <div class=\"dice\">\n                    <header class=\"part-header flexrow\">\n                        <span class=\"part-formula\">6d6</span>\n                        <span class=\"part-total\">32</span>\n                    </header>\n                    <ol class=\"dice-rolls\">\n                            <li class=\"roll die d6\">4</li>\n                            <li class=\"roll die d6 max\">6</li>\n                            <li class=\"roll die d6 max\">6</li>\n                            <li class=\"roll die d6 max\">6</li>\n                            <li class=\"roll die d6 max\">6</li>\n                            <li class=\"roll die d6\">4</li>\n                    </ol>\n                </div>\n        </section>\n    </div>\n</div>\n\n            <h4 class=\"dice-total\">\n                <span class=\"total\" data-tooltip-direction=\"LEFT\">32</span>\n            <div class=\"pf2e-toolbelt-target-buttons\"><button type=\"button\" class=\"pf2e-toolbelt-target-toggleDamageRows\" title=\"Toggle original damage buttons\"><i class=\"fa-solid fa-plus expand\"></i><i class=\"fa-solid fa-minus collapse\"></i></button></div></h4>\n    </div>\n</section>\n\n<section class=\"damage-application hidden\" data-roll-index=\"0\">\n    <button type=\"button\" data-action=\"applyDamage\" data-multiplier=\"1\" title=\"[Click] Apply full damage to selected tokens.\r[Shift-Click] Adjust value before applying.\">\n        <i class=\"fa-solid fa-heart-crack fa-fw\" inert=\"\"></i>\n        <span class=\"label\">Damage</span>\n    </button>\n    <button type=\"button\" class=\"half-damage\" data-action=\"applyDamage\" data-multiplier=\"0.5\" title=\"[Click] Apply half damage to selected tokens.\r[Shift-Click] Adjust value before applying.\">\n        <i class=\"fa-solid fa-heart-crack fa-fw\" inert=\"\"></i>\n        <span class=\"label\">Half</span>\n    </button>\n    <button type=\"button\" data-action=\"applyDamage\" data-multiplier=\"2\" title=\"[Click] Apply double damage to selected tokens.\r[Shift-Click] Adjust value before applying.\">\n        <img src=\"systems/pf2e/icons/damage/double.svg\">\n        <span class=\"label\">Double</span>\n    </button>\n    <button type=\"button\" data"
+}

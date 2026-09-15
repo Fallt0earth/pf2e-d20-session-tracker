@@ -1,0 +1,41 @@
+[
+ {
+  "content": "<div>\n    \n    <b>Test Rogue</b> is <b>Concealed</b> to attacker.<br />\n    Flat Check DC is <b>5</b>.\n</div>\n<div class=\"dice-roll\">\n<div class=\"dice-result flat-check-success\">\n    <h4 class=\"dice-total flat-check\">Success</h4>\n</div>\n</div>",
+  "speaker": {
+   "scene": "bDNqK5V55NMIigls",
+   "token": "o1U7TPh4y9X5b69m",
+   "actor": "fLoyGjZQ5dtg9zgL",
+   "alias": "Test Fighter"
+  },
+  "whisper": [],
+  "blind": false,
+  "flags": {
+   "pf2-flat-check": {},
+   "core": {
+    "canPopout": true
+   },
+   "pf2e": {}
+  },
+  "_id": "82QTgfRPCGwWbIGk",
+  "type": "base",
+  "system": {},
+  "style": 0,
+  "author": "dr6MnhBEKIPnX6pt",
+  "timestamp": 1789510251554,
+  "flavor": "",
+  "rolls": [],
+  "sound": null,
+  "emote": false,
+  "_stats": {
+   "compendiumSource": null,
+   "duplicateSource": null,
+   "exportSource": null,
+   "coreVersion": "13.351",
+   "systemId": "pf2e",
+   "systemVersion": "7.12.2",
+   "createdTime": 1789510251482,
+   "modifiedTime": 1789510251482,
+   "lastModifiedBy": "dr6MnhBEKIPnX6pt"
+  }
+ }
+]

@@ -1,0 +1,52 @@
+{
+ "targetHelper": {
+  "type": "damage",
+  "isRegen": false,
+  "saveVariants": {
+   "null": {
+    "dc": 17,
+    "basic": true,
+    "statistic": "reflex",
+    "saves": {
+     "wziVXf0HEBZFqNCA": {
+      "die": 14,
+      "dosAdjustments": {},
+      "modifiers": [
+       {
+        "excluded": false,
+        "label": "Dexterity",
+        "modifier": 0,
+        "slug": "dex"
+       },
+       {
+        "excluded": false,
+        "label": "Untrained",
+        "modifier": 0,
+        "slug": "proficiency"
+       }
+      ],
+      "notes": [],
+      "private": false,
+      "roll": "{\"class\":\"CheckRoll\",\"options\":{\"type\":\"saving-throw\",\"action\":null,\"dice\":\"1d20\",\"domains\":[\"reflex\",\"dex-based\",\"saving-throw\",\"all\",\"check\",\"reflex-check\"],\"isReroll\":false,\"totalModifier\":0,\"damaging\":false,\"rollerId\":\"buEre60zo7McQgrE\",\"showBreakdown\":true,\"degreeOfSuccess\":1},\"dice\":[],\"formula\":\"1d20\",\"terms\":[{\"class\":\"Die\",\"options\":{\"flavor\":null},\"evaluated\":true,\"number\":1,\"faces\":20,\"modifiers\":[],\"results\":[{\"result\":14,\"active\":true}]}],\"total\":14,\"evaluated\":true}",
+      "significantModifiers": [],
+      "statistic": "reflex",
+      "success": "failure",
+      "unadjustedOutcome": "failure",
+      "value": 14
+     }
+    }
+   }
+  },
+  "targets": [
+   "Scene.bDNqK5V55NMIigls.Token.wziVXf0HEBZFqNCA"
+  ],
+  "applied": {},
+  "author": null,
+  "item": null,
+  "options": [],
+  "private": false,
+  "splashIndex": -1,
+  "traits": [],
+  "splashTargets": []
+ }
+}

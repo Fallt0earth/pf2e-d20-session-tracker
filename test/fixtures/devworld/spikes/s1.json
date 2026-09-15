@@ -1,0 +1,73 @@
+{
+ "rolled": [
+  {
+   "id": "uIoVKCV47NxutYNG",
+   "blind": true,
+   "naturals": [
+    16
+   ],
+   "visibleToPlayer": false
+  },
+  {
+   "id": "UERDwmqewMpyQ48F",
+   "blind": false,
+   "naturals": [
+    11
+   ],
+   "visibleToPlayer": true
+  },
+  {
+   "id": "TBelRYUZMuFS7lGN",
+   "blind": false,
+   "naturals": [
+    18
+   ],
+   "visibleToPlayer": true
+  }
+ ],
+ "seen": [
+  {
+   "id": "uIoVKCV47NxutYNG",
+   "blind": true,
+   "whisper": [
+    "dr6MnhBEKIPnX6pt"
+   ],
+   "rolls": 1,
+   "naturals": [
+    16
+   ],
+   "userId": "lAXhwaYdJoswCvAU",
+   "isContentVisible": true,
+   "visible": true,
+   "type": "skill-check"
+  },
+  {
+   "id": "UERDwmqewMpyQ48F",
+   "blind": false,
+   "whisper": [
+    "dr6MnhBEKIPnX6pt"
+   ],
+   "rolls": 1,
+   "naturals": [
+    11
+   ],
+   "userId": "lAXhwaYdJoswCvAU",
+   "isContentVisible": true,
+   "visible": true,
+   "type": "saving-throw"
+  },
+  {
+   "id": "TBelRYUZMuFS7lGN",
+   "blind": false,
+   "whisper": [],
+   "rolls": 1,
+   "naturals": [
+    18
+   ],
+   "userId": "lAXhwaYdJoswCvAU",
+   "isContentVisible": true,
+   "visible": true,
+   "type": "skill-check"
+  }
+ ]
+}

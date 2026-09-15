@@ -1,0 +1,161 @@
+{
+ "generatedAt": "2026-09-15T21:59:36.244Z",
+ "gm": {
+  "errors": [],
+  "rerolls": [
+   {
+    "keep": "new",
+    "originalId": "nwHZXj7f24aHkrPy",
+    "originalNatural": 11,
+    "newMessageId": "67eWsTwYL2JSsiJo"
+   },
+   {
+    "keep": "higher",
+    "originalId": "lt0JuBCygxjp2pDW",
+    "originalNatural": 3,
+    "newMessageId": "lg36WxvEQ7Op8si9"
+   },
+   {
+    "keep": "lower",
+    "originalId": "BjkuC3aBfur1sMdp",
+    "originalNatural": 3,
+    "newMessageId": "T2MqHcMl6pJs1Pzi"
+   }
+  ],
+  "hook": [
+   {
+    "old": [
+     11
+    ],
+    "oldTotal": 11,
+    "new": [
+     5
+    ],
+    "newTotal": 5,
+    "resource": null,
+    "keep": "new",
+    "at": 1789509586452
+   },
+   {
+    "old": [
+     3
+    ],
+    "oldTotal": 3,
+    "new": [
+     3
+    ],
+    "newTotal": 3,
+    "resource": null,
+    "keep": "higher",
+    "at": 1789509587063
+   },
+   {
+    "old": [
+     3
+    ],
+    "oldTotal": 3,
+    "new": [
+     1
+    ],
+    "newTotal": 1,
+    "resource": null,
+    "keep": "lower",
+    "at": 1789509587670
+   }
+  ],
+  "messages": 63
+ },
+ "player": {
+  "errors": [],
+  "rerolls": [
+   {
+    "keep": "new",
+    "originalId": "xMVXQHCjpSBPaUH5",
+    "originalNatural": 2,
+    "newMessageId": "hr3v9BzkSAMZMVrZ"
+   }
+  ],
+  "hook": [
+   {
+    "old": [
+     2
+    ],
+    "oldTotal": 2,
+    "new": [
+     8
+    ],
+    "newTotal": 8,
+    "resource": null,
+    "keep": "new",
+    "at": 1789509594137
+   }
+  ],
+  "user": "PlayerA"
+ },
+ "setup": {
+  "errors": [],
+  "actors": [
+   {
+    "id": "fLoyGjZQ5dtg9zgL",
+    "name": "Test Fighter",
+    "owner": "PlayerA"
+   },
+   {
+    "id": "L0KJAfU7K8BkqIqb",
+    "name": "Test Rogue",
+    "owner": "PlayerB"
+   }
+  ],
+  "weapons": [
+   "Longsword"
+  ],
+  "combat": "vfd4dJUkqoj5NHGQ"
+ },
+ "users": [
+  {
+   "id": "dr6MnhBEKIPnX6pt",
+   "name": "Gamemaster",
+   "role": 4,
+   "isGM": true
+  },
+  {
+   "id": "lAXhwaYdJoswCvAU",
+   "name": "PlayerA",
+   "role": 1,
+   "isGM": false
+  },
+  {
+   "id": "buEre60zo7McQgrE",
+   "name": "PlayerB",
+   "role": 1,
+   "isGM": false
+  }
+ ],
+ "actors": [
+  {
+   "id": "fLoyGjZQ5dtg9zgL",
+   "name": "Test Fighter",
+   "type": "character"
+  },
+  {
+   "id": "L0KJAfU7K8BkqIqb",
+   "name": "Test Rogue",
+   "type": "character"
+  },
+  {
+   "id": "qsP0YuxZw10p19xw",
+   "name": "playera",
+   "type": "character"
+  },
+  {
+   "id": "QN3V7UTaESyAysd0",
+   "name": "playerb",
+   "type": "character"
+  },
+  {
+   "id": "xxxPF2ExPARTYxxx",
+   "name": "The Party",
+   "type": "party"
+  }
+ ]
+}

@@ -1,0 +1,66 @@
+<section class="tab tonight {{tabs.tonight.cssClass}}" data-tab="tonight" data-group="primary">
+  <div class="tonight-body">
+    {{#if model.empty}}
+      <p class="empty">{{localize "PF2E-D20.Tonight.NoRolls"}}</p>
+    {{else}}
+      <div class="party band-{{model.party.band}}">
+        <div class="party-title">{{localize "PF2E-D20.Tonight.Party"}} — {{sessionLabel}}</div>
+        <div class="party-stats">
+          <span><b>{{model.party.luck.n}}</b> {{localize "PF2E-D20.Tonight.Dice"}}</span>
+          <span>{{localize "PF2E-D20.Tonight.Mean"}} <b>{{d20fixed model.party.luck.mean 2}}</b></span>
+          <span>{{localize "PF2E-D20.Tonight.Delta"}} <b>{{d20signed model.party.luck.delta 2}}</b></span>
+          <span>{{localize "PF2E-D20.Tonight.Z"}} <b>{{d20signed model.party.luck.z 2}}</b> <em>{{model.party.bandLabel}}</em></span>
+          <span>{{localize "PF2E-D20.Tonight.Pct"}} <b>{{d20pct model.party.luck.percentile}}</b></span>
+          <span>{{localize "PF2E-D20.Tonight.Nat20"}} <b>{{d20vs model.party.luck.nat20.count model.party.luck.nat20.expected}}</b></span>
+          <span>{{localize "PF2E-D20.Tonight.Nat1"}} <b>{{d20vs model.party.luck.nat1.count model.party.luck.nat1.expected}}</b></span>
+        </div>
+      </div>
+
+      <table class="leaderboard">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="who"></th>
+            <th title="{{localize "PF2E-D20.Tonight.Dice"}}">n</th>
+            <th>{{localize "PF2E-D20.Tonight.Mean"}}</th>
+            <th>{{localize "PF2E-D20.Tonight.Delta"}}</th>
+            <th>{{localize "PF2E-D20.Tonight.Z"}}</th>
+            <th>{{localize "PF2E-D20.Tonight.Pct"}}</th>
+            <th>{{localize "PF2E-D20.Tonight.Nat20"}}</th>
+            <th>{{localize "PF2E-D20.Tonight.Nat1"}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each model.rows}}
+            <tr class="row band-{{this.band}} {{#if this.thin}}thin{{/if}} {{#if this.none}}none{{/if}}">
+              <td><button type="button" class="icon plain" data-action="toggleExpand" data-id="{{this.id}}"><i class="fa-solid {{#if this.expanded}}fa-chevron-down{{else}}fa-chevron-right{{/if}}"></i></button></td>
+              <td class="who"><b>{{this.label}}</b>{{#if this.subtitle}}<small>{{this.subtitle}}</small>{{/if}}</td>
+              <td>{{this.luck.n}}</td>
+              <td>{{d20fixed this.luck.mean 2}}</td>
+              <td>{{d20signed this.luck.delta 2}}</td>
+              <td class="z" title="{{#if this.thin}}{{localize "PF2E-D20.Tonight.ThinSample"}}{{/if}}{{#if this.none}}{{localize "PF2E-D20.Tonight.NoSample"}}{{/if}}">
+                {{#unless this.none}}{{d20signed this.luck.z 2}} <em>{{this.bandLabel}}</em>{{else}}–{{/unless}}
+              </td>
+              <td>{{#unless this.none}}{{d20pct this.luck.percentile}}{{else}}–{{/unless}}</td>
+              <td>{{d20vs this.luck.nat20.count this.luck.nat20.expected}}</td>
+              <td>{{d20vs this.luck.nat1.count this.luck.nat1.expected}}</td>
+            </tr>
+            {{#if this.expanded}}
+              <tr class="detail">
+                <td colspan="9">
+                  {{> "modules/pf2e-d20-session-tracker/templates/tracker/partials/histogram.hbs" bars=this.histBars}}
+                  <div class="types">
+                    {{#each this.types}}<span class="chip">{{this.type}} <b>{{this.n}}</b></span>{{/each}}
+                    {{#if this.rerolls}}<span class="chip">rerolls <b>{{this.rerolls}}</b></span>{{/if}}
+                    {{#if this.secret}}<span class="chip">secret <b>{{this.secret}}</b></span>{{/if}}
+                  </div>
+                </td>
+              </tr>
+            {{/if}}
+          {{/each}}
+        </tbody>
+      </table>
+    {{/if}}
+    <p class="help"><i class="fa-solid fa-circle-info"></i> {{localize "PF2E-D20.Tonight.Help"}}</p>
+  </div>
+</section>

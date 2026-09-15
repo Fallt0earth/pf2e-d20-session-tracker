@@ -1,0 +1,51 @@
+---
+# Foundry VTT dev instance for pf2e-d20-session-tracker on the NAS.
+# Deployed by dev/deploy.ps1 to /mnt/user/appdata/foundry-dev/app/docker-compose.yml.
+# Run from the NAS over SSH, never from a hand-edited copy:
+#   docker compose -f /mnt/user/appdata/foundry-dev/app/docker-compose.yml up -d
+# Layout (docs/nas-quickstart.MD §4): app/ (this file + module/), env/ (secrets, 600), data/ (Foundry /data), backups/.
+name: foundry-dev
+services:
+  foundry:
+    image: ghcr.io/felddy/foundryvtt:13.351.0@sha256:41d518782f2fabbec887413c56da8ef8175c22fb5a75fde45382661443a8ae6b
+    container_name: foundry-dev
+    # Foundry binds its licence to the container hostname; keep it stable.
+    hostname: foundry-dev
+    # The image never chowns /data. data/ on the NAS is owned by 99:100 (nobody:users).
+    user: "99:100"
+    restart: unless-stopped
+    env_file:
+      # FOUNDRY_LICENSE_KEY and FOUNDRY_ADMIN_KEY. Mode 600 on the NAS, never in the repo.
+      - ../env/foundry-dev.env
+    environment:
+      FOUNDRY_VERSION: "13.351"
+      # Holds foundryvtt-13.351.zip (the Linux release), so no foundryvtt.com login is needed.
+      CONTAINER_CACHE: /data/container_cache
+      FOUNDRY_HOT_RELOAD: "true"
+      FOUNDRY_MINIFY_STATIC_FILES: "false"
+      FOUNDRY_TELEMETRY: "false"
+      FOUNDRY_IP_DISCOVERY: "false"
+      FOUNDRY_LOCAL_HOSTNAME: your-docker-host
+      # Auto-launch the dev world after every (re)start so a container restart never lands on the setup page.
+      FOUNDRY_WORLD: devworld
+      TZ: America/Chicago
+    volumes:
+      - type: bind
+        source: ../data
+        target: /data
+      # The module tree shipped by dev/deploy.ps1, mounted where Foundry expects installed modules.
+      - type: bind
+        source: ./module
+        target: /data/Data/modules/pf2e-d20-session-tracker
+        read_only: true
+    ports:
+      # LAN + Tailscale reachable, not internet-facing. Every Foundry user gets a password (licence FAQ).
+      - target: 30000
+        published: 30000
+        protocol: tcp
+    # The image defines HEALTHCHECK against http://localhost:30000/api/status.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

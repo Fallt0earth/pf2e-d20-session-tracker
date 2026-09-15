@@ -1,0 +1,12 @@
+{
+ "N": 50000,
+ "bytes": 28845281,
+ "createMs": 54172,
+ "updateMs": 48311,
+ "readMs": 0,
+ "readBack": 50001,
+ "journalId": "fglTY6rcUejzZJLS",
+ "joinMsBefore": 3851,
+ "joinMsWith50k": 5522,
+ "joinMsAfterDelete": 3889
+}

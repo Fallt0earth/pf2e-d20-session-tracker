@@ -1,0 +1,9 @@
+<div class="histogram">
+  {{#each bars}}
+    <div class="bar {{#if (d20eq this.face 1)}}nat1{{/if}} {{#if (d20eq this.face 20)}}nat20{{/if}}" title="{{this.face}}: {{this.count}}">
+      <div class="fill" style="height: {{this.pct}}%"></div>
+      <span class="count">{{#if this.count}}{{this.count}}{{/if}}</span>
+      <span class="face">{{this.face}}</span>
+    </div>
+  {{/each}}
+</div>

@@ -1,0 +1,24 @@
+{
+ "created": {
+  "journalId": "5KNUcyrru6P9UMgz",
+  "pageId": "A0CFHey0OhXyoKIJ"
+ },
+ "seen": {
+  "journalPresent": true,
+  "visible": false,
+  "observer": false,
+  "pagePresent": true,
+  "pageFlag": {
+   "v": 1,
+   "records": [
+    {
+     "id": "x",
+     "natural": 17,
+     "blind": true
+    }
+   ]
+  },
+  "journalCount": 1
+ },
+ "after": 2
+}

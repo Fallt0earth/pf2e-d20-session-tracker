@@ -1,0 +1,69 @@
+{
+ "result": {
+  "order": [
+   [
+    "preCreateChatMessage",
+    3214.39999999851,
+    false,
+    true
+   ],
+   [
+    "pf2e.reroll",
+    3672.39999999851
+   ],
+   [
+    "preDeleteChatMessage",
+    3673.7999999970198,
+    "z2bU5QEMZczlPwfG",
+    true
+   ],
+   [
+    "preCreateChatMessage",
+    3827,
+    true,
+    true
+   ]
+  ],
+  "originalId": "z2bU5QEMZczlPwfG",
+  "originalNatural": 18,
+  "newMessageId": "AXbqVyCD8X81N5GQ",
+  "shownNatural": 19,
+  "flag": {
+   "reroll": {
+    "oldNaturals": [
+     18
+    ],
+    "newNaturals": [
+     19
+    ],
+    "oldTotal": 18,
+    "newTotal": 19,
+    "keep": "higher",
+    "resource": null,
+    "ts": 1789509885716,
+    "oldMessageId": "z2bU5QEMZczlPwfG"
+   }
+  }
+ },
+ "gmView": {
+  "present": true,
+  "flag": {
+   "reroll": {
+    "oldNaturals": [
+     18
+    ],
+    "newNaturals": [
+     19
+    ],
+    "oldTotal": 18,
+    "newTotal": 19,
+    "keep": "higher",
+    "resource": null,
+    "ts": 1789509885716,
+    "oldMessageId": "z2bU5QEMZczlPwfG"
+   }
+  },
+  "isReroll": true,
+  "originalStillExists": false
+ }
+}

@@ -1,0 +1,59 @@
+{
+ "settings": {
+  "pf2-flat-check.hideRollValue": false,
+  "pf2-flat-check.ignoreConcealed": false,
+  "pf2-flat-check.ignoreGrabbed": false,
+  "pf2-flat-check.ignoreInvisibility": false,
+  "pf2-flat-check.usePf2eVisionerAdapter": true,
+  "pf2-flat-check.ignorePassiveActions": true,
+  "pf2-flat-check.ignoreReactionActions": true
+ },
+ "newMessages": 2,
+ "flatMessages": [
+  {
+   "content": "<div>\n    \n    <b>Test Rogue</b> is <b>Concealed</b> to attacker.<br />\n    Flat Check DC is <b>5</b>.\n</div>\n<div class=\"dice-roll\">\n<div class=\"dice-result flat-check-success\">\n    <h4 class=\"dice-total flat-check\">7</h4>\n</div>\n</div>",
+   "speaker": {
+    "scene": "bDNqK5V55NMIigls",
+    "token": "o1U7TPh4y9X5b69m",
+    "actor": "fLoyGjZQ5dtg9zgL",
+    "alias": "Test Fighter"
+   },
+   "whisper": [],
+   "blind": false,
+   "flags": {
+    "pf2-flat-check": {},
+    "core": {
+     "canPopout": true
+    },
+    "pf2e": {}
+   },
+   "_id": "dFvEOUquTEh8m5Vk",
+   "type": "base",
+   "system": {},
+   "style": 0,
+   "author": "dr6MnhBEKIPnX6pt",
+   "timestamp": 1789510248778,
+   "flavor": "",
+   "rolls": [],
+   "sound": null,
+   "emote": false,
+   "_stats": {
+    "compendiumSource": null,
+    "duplicateSource": null,
+    "exportSource": null,
+    "coreVersion": "13.351",
+    "systemId": "pf2e",
+    "systemVersion": "7.12.2",
+    "createdTime": 1789510248707,
+    "modifiedTime": 1789510248707,
+    "lastModifiedBy": "dr6MnhBEKIPnX6pt"
+   }
+  }
+ ],
+ "others": [
+  {
+   "id": "lPtwMA9NfCZy020P",
+   "type": "attack-roll"
+  }
+ ]
+}

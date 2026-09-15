@@ -1,0 +1,72 @@
+/* PF2e d20 Session Tracker — window styles. Uses core v13 theme variables with fallbacks. */
+.pf2e-d20-tracker {
+  --d20-hot: #d9822b;
+  --d20-cold: #3b82c4;
+  --d20-blessed: #c7a020;
+  --d20-cursed: #7c3aed;
+  --d20-muted: var(--color-text-secondary, #888);
+  --d20-line: var(--color-border-light-2, rgba(128, 128, 128, 0.35));
+  --d20-bg-soft: rgba(128, 128, 128, 0.12);
+}
+.pf2e-d20-tracker .window-content { display: flex; flex-direction: column; gap: 0.5rem; overflow: hidden; }
+
+.pf2e-d20-tracker .tracker-header .row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.pf2e-d20-tracker .session-picker { display: flex; align-items: center; gap: 0.35rem; font-weight: 600; }
+.pf2e-d20-tracker .session-picker select { min-width: 12rem; }
+.pf2e-d20-tracker .toggles { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
+.pf2e-d20-tracker .toggles .sep { width: 0.5rem; }
+.pf2e-d20-tracker .actions { margin-left: auto; display: flex; gap: 0.25rem; }
+.pf2e-d20-tracker .note { margin: 0; font-size: var(--font-size-12, 12px); color: var(--d20-muted); }
+
+.pf2e-d20-tracker button.pill {
+  height: auto; line-height: 1.4; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: var(--font-size-12, 12px);
+  border: 1px solid var(--d20-line); background: transparent; cursor: pointer;
+}
+.pf2e-d20-tracker button.pill.active { background: var(--d20-bg-soft); border-color: currentColor; font-weight: 700; }
+.pf2e-d20-tracker button.icon { width: 2rem; height: 2rem; padding: 0; line-height: 2rem; }
+.pf2e-d20-tracker button.icon.plain { border: none; background: transparent; box-shadow: none; }
+.pf2e-d20-tracker button.icon.paused { color: var(--d20-hot); }
+
+.pf2e-d20-tracker .tab { flex: 1; min-height: 0; display: none; }
+.pf2e-d20-tracker .tab.active { display: flex; flex-direction: column; }
+.pf2e-d20-tracker .tonight-body, .pf2e-d20-tracker .sessions-body { flex: 1; overflow: auto; padding-right: 0.25rem; }
+
+.pf2e-d20-tracker .party { border: 1px solid var(--d20-line); border-left: 4px solid var(--d20-muted); border-radius: 4px; padding: 0.5rem 0.75rem; margin-bottom: 0.5rem; background: var(--d20-bg-soft); }
+.pf2e-d20-tracker .party-title { font-weight: 700; margin-bottom: 0.25rem; }
+.pf2e-d20-tracker .party-stats { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; font-size: var(--font-size-13, 13px); }
+.pf2e-d20-tracker .party-stats em { font-style: normal; color: var(--d20-muted); }
+
+.pf2e-d20-tracker table.leaderboard, .pf2e-d20-tracker table.sessions-list { width: 100%; border-collapse: collapse; }
+.pf2e-d20-tracker table th { text-align: right; font-size: var(--font-size-12, 12px); color: var(--d20-muted); padding: 0.25rem 0.4rem; border-bottom: 1px solid var(--d20-line); }
+.pf2e-d20-tracker table th.who, .pf2e-d20-tracker table td.who { text-align: left; }
+.pf2e-d20-tracker table td { text-align: right; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--d20-line); white-space: nowrap; }
+.pf2e-d20-tracker table td.who small { display: block; color: var(--d20-muted); font-size: var(--font-size-11, 11px); }
+.pf2e-d20-tracker table td.z em { font-style: normal; font-size: var(--font-size-11, 11px); margin-left: 0.25rem; }
+.pf2e-d20-tracker tr.thin td.z, .pf2e-d20-tracker tr.none td.z { color: var(--d20-muted); }
+.pf2e-d20-tracker tr.row.band-hot td.z, .pf2e-d20-tracker .party.band-hot { border-left-color: var(--d20-hot); }
+.pf2e-d20-tracker tr.row.band-hot td.z em { color: var(--d20-hot); }
+.pf2e-d20-tracker tr.row.band-cold td.z em { color: var(--d20-cold); }
+.pf2e-d20-tracker .party.band-cold { border-left-color: var(--d20-cold); }
+.pf2e-d20-tracker tr.row.band-blessed td.z em { color: var(--d20-blessed); font-weight: 700; }
+.pf2e-d20-tracker .party.band-blessed { border-left-color: var(--d20-blessed); }
+.pf2e-d20-tracker tr.row.band-cursed td.z em { color: var(--d20-cursed); font-weight: 700; }
+.pf2e-d20-tracker .party.band-cursed { border-left-color: var(--d20-cursed); }
+.pf2e-d20-tracker tr.detail td { text-align: left; background: var(--d20-bg-soft); white-space: normal; }
+.pf2e-d20-tracker tr.selected td { background: var(--d20-bg-soft); }
+
+.pf2e-d20-tracker .histogram { display: flex; align-items: flex-end; gap: 2px; height: 90px; padding: 0.25rem 0 0.25rem; }
+.pf2e-d20-tracker .histogram .bar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; position: relative; }
+.pf2e-d20-tracker .histogram .fill { width: 100%; background: var(--d20-muted); border-radius: 2px 2px 0 0; min-height: 1px; }
+.pf2e-d20-tracker .histogram .bar.nat1 .fill { background: var(--d20-cursed); }
+.pf2e-d20-tracker .histogram .bar.nat20 .fill { background: var(--d20-blessed); }
+.pf2e-d20-tracker .histogram .count { position: absolute; top: -2px; font-size: 10px; color: var(--d20-muted); }
+.pf2e-d20-tracker .histogram .face { font-size: 10px; color: var(--d20-muted); line-height: 1; margin-top: 2px; }
+.pf2e-d20-tracker .types { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem; }
+.pf2e-d20-tracker .chip { border: 1px solid var(--d20-line); border-radius: 999px; padding: 0 0.5rem; font-size: var(--font-size-11, 11px); }
+.pf2e-d20-tracker .help, .pf2e-d20-tracker .empty { color: var(--d20-muted); font-size: var(--font-size-12, 12px); margin: 0.5rem 0 0; }
+.pf2e-d20-tracker .sessions-toolbar { display: flex; gap: 0.25rem; align-items: center; margin-bottom: 0.25rem; }
+.pf2e-d20-tracker .sessions-toolbar .spacer { flex: 1; }
+.pf2e-d20-tracker button.danger { color: #c0392b; }
+.pf2e-d20-tracker tr.excluded td { opacity: 0.55; }
+.pf2e-d20-tracker td.row-actions { white-space: nowrap; }
+.pf2e-d20-tracker td.who em { font-style: normal; font-size: var(--font-size-11, 11px); color: var(--d20-muted); }
