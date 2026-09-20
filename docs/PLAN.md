@@ -17,6 +17,8 @@ This plan does not re-open decisions D1–D4 (SCOPE handoff summary). Where it r
 
 Checklist states: `[ ]` not started, `[~]` in progress, `[x]` done and verified. Update this file as work lands; it is the running state for future Claude Code sessions.
 
+**Release status.** **v1.0.0 released 2026-09-19** from `main` at https://github.com/Fallt0earth/pf2e-d20-session-tracker (tag `v1.0.0`; the Release workflow attached `module.json` and `module.zip`, verified by download: 79 files, manifest at the top level, download pinned to the tag). Install manifest: `https://github.com/Fallt0earth/pf2e-d20-session-tracker/releases/latest/download/module.json`. The intermediate tags planned for M1–M3 (`v0.1.0`–`v0.3.0`) were never cut; 1.0.0 is the first release. Next: the Forge gates (manual, David) and M5.
+
 ---
 
 ## 1. New findings since the scope doc (2026-09-15)
@@ -74,6 +76,7 @@ Nothing else in the list (HUDs, Token Action HUD, Argon, Sequencer, Item Piles, 
 
 ### 1.8 Presentation decisions (David, 2026-09-19)
 - **D6 — Human-readable first layer.** The first thing anyone sees is percentages and plain sentences, never a z-score: a **luck percentage** ("luckier than 86% of evenings", the normal CDF of the mean-based z, clamped to 1–99% and hidden below 5 rolls), the **average roll** against the fair 10.5, the **share of high rolls** (11+, fair is 50%), and **Nat 20 / Nat 1 counts with their rate** (fair is 5%). A centre-anchored meter shows luck at a glance. The z-score, exact percentile and binomial tails stay available one level down: the expanded row on Tonight, a details line on Fun, and tooltips on History. Ranking is unchanged (percentile and z order identically). Implemented in `ui/tonight-decorate.js`; `luckSummary` gained `high` and face `rate`.
+- **D8 — Licence: GPL-3.0.** David created the GitHub repo with a GPL-3.0 `LICENSE`; the locally drafted MIT file was dropped when the histories were merged. README and `package.json` say GPL-3.0. Only design patterns, no code, came from the three MIT modules surveyed in SCOPE §1, so nothing conflicts. As sole author David can relicense later.
 - **D7 — The report is a popup, opened only by an explicit click.** The chat summary card is gone. The scroll button in the tracker (any user who may open the tracker), `api.openReport(key)`, or a chat link someone chooses to click opens `ui/report-app.js`, a window of its own on that client only. Opening it posts nothing. The GM may press "Post a link in chat" inside the popup: one line with an Open button (`ui/report-link.js`, `renderChatMessageHTML`), never the report itself.
 
 ---
@@ -374,11 +377,42 @@ Re-scoped 2026-09-15: the macro is a **validation tool** for the normalizer agai
 - [x] History tab: `ui/history-model.js` (pure, tested) — all-time rank with best/worst evening and Nat 20 rate, z sparkline per player, evening × player grid; excluded evenings left out.
 - [x] `playerAccess` / `blindPolicy` enforced in one place (`ui/view-options.js`) for window, API, exports and the summary card; tests in `test/view-model.test.js`.
 - [x] README, CHANGELOG.
-- [ ] Tag `v1.0.0` (needs I4) and **Forge gate 3**: install; player account walkthrough (blind roll absent from the player view, own-rows mode).
+- [x] Tag `v1.0.0` pushed 2026-09-19; release assets verified.
+- [ ] **Forge gates (David, manual):** Bazaar → Install from Manifest with the URL above; confirm the module loads on the live world; play one evening with capture on; check persistence across a Forge idle/wake (SCOPE §9 item 11); player account walkthrough (blind roll absent from the player view, own-rows mode). Record results in `docs/TESTING.md`.
 - Acceptance: SCOPE Must 1–5 and Should 7–11 met on the dev instance; Should 6 (history backfill) deferred post-1.0 by David; v1 code complete pending the Forge gates.
 
 ### M4 — Foundry v14 / PF2e 8.x pass (1 session, when David upgrades the Forge game)
 - [ ] Bump `compatibility`; confirm the `pf2e.reroll` options-object form (already handled); re-run SCOPE §9 on 14.36x + PF2e 8.5 and `pf2-flat-check` 4.0.0; Forge gate.
+
+### M5 — Configurable session definition (goal set by David 2026-09-19; target 1.1.0)
+
+**Goal.** A table that plays an unusual slot must get correct sessions without fighting the module: overnight games, games that start before and end after the day boundary, two games in one day, a group in another timezone, a marathon. Crossing a calendar date (or the boundary hour) must never split one game in two, and the GM must be able to change the definition later and have stored history follow.
+
+**What v1.0 already does, and where it breaks.** One rule: `sessionKey = local date of (timestamp − boundaryHour)` in the world timezone. It handles "past midnight" when the boundary sits in the dead hours (default 06:00). It breaks when play straddles the boundary itself (a 03:00–09:00 game with the default; any slot if the boundary was set wrong), when two games happen in one "day", and it cannot describe a slot at all: the GM has to reason about an abstract boundary hour.
+
+**Design — a `sessionMode` world setting with three definitions, one pure sessionizer.**
+1. **`daily` (default, today's behaviour).** Timezone + boundary hour. UX fix: next to the setting, a live preview sentence built from the current values ("A roll at Sun 01:30 counts toward Saturday's session; the day turns over at 06:00 America/Chicago") and a one-click helper "we usually start at HH:MM" that places the boundary 12 hours opposite the usual start, the point least likely to be mid-game.
+2. **`gap` — "a session is a run of play".** A new session starts when no counted roll has happened for `sessionGapHours` (default 5). No clock boundary exists, so any timeslot and any date crossing works, and two games in one day become two sessions. Key = local date of the session's **first** roll, with `~2`, `~3` suffixes for further sessions starting on the same date (`2026-09-19`, `2026-09-19~2`); lexical order stays chronological, and `sessionLabel` renders "2026-09-19 Sat (2)".
+3. **`manual` — Start / End buttons** in the tracker header (GM). Rolls between Start and End belong to that session (key = local date of Start, same suffix rule); rolls outside any session go to an `unscheduled` bucket that is hidden from the leaderboard by default and can be assigned to a session or discarded from the Sessions tab. A forgotten End auto-closes after `sessionGapHours` of silence so a session can never swallow next week's game.
+
+**Architecture.**
+- `sessions/sessionizer.js` (pure, Foundry-free, unit-tested) replaces the stateless `sessionKeyFor(ts)` at the capture boundary: `assign(ts, state, config) → { key, state }` where `state = { lastTs, lastKey, openManual }` and `config = { mode, timezone, boundaryHour, gapHours }`. `daily` ignores state, so v1.0 behaviour is bit-for-bit unchanged. `bucket.js` stays as the calendar helper both modes use for local dates.
+- The store owns the sessionizer state (seeded from the newest stored record on load), so live capture and catch-up go through one code path; catch-up walks messages chronologically from the start of the newest stored session instead of filtering by a precomputed key. The normalizer keeps taking `ctx.sessionKeyFor`, now backed by the store's stateful assigner — extractors do not change.
+- **Re-bucket stored history.** Every record keeps its raw `ts` (decision D1 foresaw this). A GM action "Re-apply session definition" recomputes keys for all stored records in chronological order under the current config, moves records between pages, keeps page meta (label, excluded) where a key survives, and reports "N records moved, M sessions created, K removed" after a confirm dialog that shows the before/after session list. Mandatory `dev/backup.ps1`-style safety on the dev instance; on the Forge the journal can be exported first.
+- "Current session" (used by the blind-roll policy and the default selection) becomes: `daily` → today's key; `gap` → the newest session if its last roll is within the gap, else none; `manual` → the open session, else none.
+- UI wording switches from "Evening" to "Session" when the mode is not `daily`; the Sessions tab gains merge-with-previous and split-at-time for the rare case the gap rule guesses wrong.
+
+**Acceptance (all as unit tests on the pure sessionizer, plus one e2e run).**
+- A 22:00–07:30 game is one session in `gap` mode and, with a 12:00 boundary, in `daily` mode; with the default 06:00 boundary `daily` splits it (documented, and the preview sentence makes it visible).
+- A 03:00–09:00 game across the default boundary is one session in `gap` and `manual`.
+- Two games on one date (13:00–16:00, 20:00–23:30) give `…` and `…~2` in `gap` mode, one session in `daily`.
+- Both DST nights, a non-Chicago timezone, and a gap exactly equal to the threshold behave deterministically.
+- Live capture and catch-up assign identical keys for the same message stream (drift test); repeated catch-up is a no-op.
+- Re-bucket is idempotent, preserves record ids and counts, and round-trips `daily → gap → daily` to the original pages.
+- `manual`: rolls before Start land in `unscheduled`; a forgotten End auto-closes; assigning `unscheduled` rolls to a session moves them.
+- v1.0 data opens unchanged under 1.1 with `sessionMode: daily`.
+
+**Order of work.** (1) sessionizer + tests; (2) store integration and catch-up rewrite, drift test; (3) `gap` mode end to end with the e2e harness (simulated timestamps via `ChatMessage.create({ timestamp })`); (4) re-bucket action with its confirm/preview; (5) settings UX: preview sentence and the usual-start helper; (6) `manual` mode and the `unscheduled` bucket; (7) merge/split tools; release 1.1.0. Steps 1–5 are the core and can ship as 1.1.0 on their own if manual mode should wait.
 
 ### Post-1.0 backlog (deferred 2026-09-15)
 - **Whole-history backfill** (SCOPE Should-6, D5): the normalizer already accepts `event: "backfill"`; deferred are the all-sessions UI with progress and date range, the `gmPresent` heuristic and auto-exclusion of junk evenings, attribution guesses for Toolbelt saves and flat checks in old messages, and HTML-only recovery of reroll discards. Needs a world export and `dev/backup.ps1` before the first run on the Forge.
