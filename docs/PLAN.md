@@ -17,7 +17,7 @@ This plan does not re-open decisions D1–D4 (SCOPE handoff summary). Where it r
 
 Checklist states: `[ ]` not started, `[~]` in progress, `[x]` done and verified. Update this file as work lands; it is the running state for future Claude Code sessions.
 
-**Release status.** **v1.0.0 released 2026-09-19** from `main` at https://github.com/Fallt0earth/pf2e-d20-session-tracker (tag `v1.0.0`; the Release workflow attached `module.json` and `module.zip`, verified by download: 79 files, manifest at the top level, download pinned to the tag). Install manifest: `https://github.com/Fallt0earth/pf2e-d20-session-tracker/releases/latest/download/module.json`. The intermediate tags planned for M1–M3 (`v0.1.0`–`v0.3.0`) were never cut; 1.0.0 is the first release. Next: the Forge gates (manual, David) and M5.
+**Release status.** **v1.0.0 released 2026-09-19** from `main` at https://github.com/Fallt0earth/pf2e-d20-session-tracker (tag `v1.0.0`; the Release workflow attached `module.json` and `module.zip`, verified by download: 79 files, manifest at the top level, download pinned to the tag). Install manifest: `https://github.com/Fallt0earth/pf2e-d20-session-tracker/releases/latest/download/module.json`. The intermediate tags planned for M1–M3 (`v0.1.0`–`v0.3.0`) were never cut; 1.0.0 is the first release. **v1.1.0 released 2026-09-19** (M5 session definition + the GM "Players see" control; release assets verified by download: manifest 1.1.0, 80 files). Licence stays GPL-3.0 (confirmed by David). Next: the Forge gates (manual, David), then M4 when the Forge game moves to v14, then the post-1.0 backlog.
 
 ---
 
