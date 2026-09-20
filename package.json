@@ -1,6 +1,6 @@
 {
   "name": "pf2e-d20-session-tracker",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Foundry VTT v13 / PF2e module: per-evening natural d20 tracking with honest luck statistics.",
@@ -16,5 +16,6 @@
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "license": "GPL-3.0-only"
 }

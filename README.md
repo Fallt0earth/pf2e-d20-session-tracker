@@ -17,7 +17,11 @@ Luck is the natural die only. Totals and outcomes mix in modifiers and DCs, so t
 - If the GM reloads or the server restarts mid-evening, a catch-up scans tonight's chat for anything missed. Deleting the chat log does not affect stored evenings.
 
 ## Install
-Once released: Foundry setup → Add-on Modules → Install Module → paste the manifest URL from the latest GitHub release. On The Forge: Bazaar → Marketplace → Toolbox → Install from Manifest.
+Manifest URL:
+```
+https://github.com/Fallt0earth/pf2e-d20-session-tracker/releases/latest/download/module.json
+```
+Foundry setup → Add-on Modules → Install Module → paste the URL. On The Forge: Bazaar → Marketplace → Toolbox → Install from Manifest.
 
 ## Using it
 Open the window from the token controls (d20 icon), a keybinding you assign, or `game.modules.get("pf2e-d20-session-tracker").api.open()`.
@@ -39,4 +43,4 @@ Blind and secret roll results are stored in a GM-only journal and filtered out o
 - Dev instance and headless verification: see `docs/PLAN.md`, `docs/TESTING.md`, `dev/e2e/`.
 
 ## License
-MIT. Patterns borrowed with attribution from Simple d20 stats (Yosoy-Ed), Roll Tracker (drexl93) and dice-stats (jacobwojoski), all MIT.
+GPL-3.0, see `LICENSE`. Design patterns (not code) were informed by three MIT-licensed modules, credited with thanks: Simple d20 stats (Yosoy-Ed), Roll Tracker (drexl93) and dice-stats (jacobwojoski).

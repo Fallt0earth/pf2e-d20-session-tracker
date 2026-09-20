@@ -10,6 +10,7 @@
   // scripts/capture/extractors/pf2e-check.js
   var pf2e_check_exports = {};
   __export(pf2e_check_exports, {
+    deriveStat: () => deriveStat,
     extract: () => extract,
     id: () => id,
     keptNewRoll: () => keptNewRoll,
@@ -127,16 +128,18 @@
   var on = ["create", "backfill"];
   function matches(msg) {
     const type = msg.flags?.pf2e?.context?.type;
-    return typeof type === "string" && PF2E_CHECK_TYPES.includes(type);
+    return typeof type === "string" && PF2E_CHECK_TYPES.includes(type) && d20sOfMessage(msg.rolls).length > 0;
   }
   function extract(msg, ctx, base) {
     const context = msg.flags?.pf2e?.context ?? {};
     const dice = d20sOfMessage(msg.rolls);
     if (!dice.length) return [];
+    const domains = Array.isArray(context.domains) ? [...context.domains] : [];
     const common = {
       type: context.type,
       source: "pf2e-check",
-      domains: Array.isArray(context.domains) ? [...context.domains] : [],
+      domains,
+      stat: deriveStat(context.type, context.identifier ?? null, domains),
       ident: context.identifier ?? null,
       action: context.action ?? null,
       dc: numberOrNull(context.dc?.value),
@@ -217,6 +220,29 @@
     }));
     return [...records, ...extra];
   }
+  var SAVES = ["fortitude", "reflex", "will"];
+  var SKILLS = ["acrobatics", "arcana", "athletics", "crafting", "deception", "diplomacy", "intimidation", "medicine", "nature", "occultism", "performance", "religion", "society", "stealth", "survival", "thievery"];
+  function deriveStat(type, identifier, domains) {
+    const has = (s) => domains.includes(s);
+    if (type === "saving-throw") return SAVES.find(has) ?? identifier ?? "save";
+    if (type === "perception-check") return "perception";
+    if (type === "flat-check") return "flat-check";
+    if (type === "counteract-check") return "counteract";
+    if (type === "skill-check" || type === "initiative" || type === "check") {
+      const skill = SKILLS.find(has) ?? domains.find((d) => /-lore$/.test(d)) ?? null;
+      if (skill) return skill;
+      if (has("perception")) return "perception";
+      if (identifier && /^[a-z][a-z-]*$/.test(identifier)) return identifier;
+      return type === "initiative" ? "initiative" : null;
+    }
+    if (type === "attack-roll") {
+      if (has("spell-attack-roll")) return "spell-attack";
+      if (has("ranged-attack-roll")) return "ranged-strike";
+      if (has("melee-attack-roll")) return "melee-strike";
+      return "strike";
+    }
+    return identifier ?? null;
+  }
   function keptNewRoll(keep, oldTotal, newTotal) {
     if (keep === "higher" && Number(oldTotal) > Number(newTotal)) return false;
     if (keep === "lower" && Number(oldTotal) < Number(newTotal)) return false;
@@ -275,76 +301,83 @@
   var on3 = ["create", "update", "backfill"];
   var FLAG_SCOPE = "pf2e-toolbelt";
   function matches3(msg) {
-    const saves = savesOf(msg);
-    return !!saves && Object.keys(saves).length > 0;
+    return listSaves(msg).length > 0;
   }
   function extract3(msg, ctx, base) {
-    const saves = savesOf(msg) ?? {};
-    const helper = msg.flags?.[FLAG_SCOPE]?.targetHelper ?? {};
-    const targets = indexTargets(helper);
-    const saveSlug = helper.save?.statistic ?? helper.save?.slug ?? helper.saveStatistic ?? null;
-    const dc = numberOrNull2(helper.save?.dc ?? helper.dc);
     const out = [];
-    for (const [targetKey, save] of Object.entries(saves)) {
-      if (!save || typeof save !== "object") continue;
-      const natural = numberOrNull2(save.die ?? save.natural ?? firstD20(save.roll));
-      const total = numberOrNull2(save.value ?? save.total ?? save.roll?.total);
-      const outcome = normalizeOutcome(save.success ?? save.outcome ?? save.degree);
-      const target = targets[targetKey] ?? {};
-      const baseId = `${msg._id}:tb:${targetKey}`;
+    for (const { variantKey, variant, tokenId, sceneId, save } of listSaves(msg)) {
+      const roll = parseRoll(save.roll);
+      const options = roll?.options ?? {};
+      const natural = numberOrNull2(save.die ?? firstD20(roll));
+      const total = numberOrNull2(save.value ?? roll?.total);
+      const statistic = save.statistic ?? variant.statistic ?? null;
+      const dc = numberOrNull2(variant.dc);
+      const rollerId = typeof options.rollerId === "string" ? options.rollerId : null;
+      const userId = rollerId ?? (ctx.event === "update" ? ctx.updaterUserId ?? null : null);
+      const token = ctx.resolveToken?.(sceneId, tokenId) ?? null;
+      const baseId = `${msg._id}:tb:${safe(variantKey)}:${tokenId}`;
       const prev = ctx.existing?.(baseId);
-      const seq = prev && prev.natural !== natural ? seqOf(prev.id) + 1 : seqOf(prev?.id ?? `${baseId}:0`);
+      const prevSeq = prev ? seqOf(prev.id) : -1;
+      const changed = prev && (prev.natural !== natural || prev.total !== total);
+      const seq = prev ? changed ? prevSeq + 1 : prevSeq : 0;
       out.push(base({
         id: `${baseId}:${seq}`,
         dieIndex: out.length,
         natural,
         kept: true,
-        formula: "1d20",
+        formula: typeof roll?.formula === "string" && /d20/.test(roll.formula) ? dieFormula2(roll) : "1d20",
         total,
         type: "saving-throw",
         source: "toolbelt",
-        domains: saveSlug ? [saveSlug, "saving-throw"] : ["saving-throw"],
-        ident: saveSlug,
+        domains: Array.isArray(options.domains) ? [...options.domains] : statistic ? [statistic, "saving-throw"] : ["saving-throw"],
+        stat: statistic,
+        ident: statistic,
+        action: variant.basic ? "basic-save" : null,
         dc,
         dcVisible: dc !== null ? true : null,
-        outcome,
-        isReroll: save.rerolled === true || seq > 0,
-        actorId: target.actor ?? save.actor ?? null,
-        tokenId: target.token ?? targetKey,
-        alias: target.name ?? null,
-        userId: ctx.event === "update" && ctx.updaterUserId ? ctx.updaterUserId : save.user ?? save.userId ?? null,
-        userGuess: !(ctx.event === "update" && ctx.updaterUserId) && !(save.user ?? save.userId)
+        outcome: normalizeOutcome(save.success ?? save.outcome ?? options.degreeOfSuccess),
+        unadjustedOutcome: normalizeOutcome(save.unadjustedOutcome) ?? null,
+        isReroll: options.isReroll === true || seq > 0,
+        ...seq > 0 && prev ? { rerollOf: prev.id } : {},
+        mode: save.private ? "blindroll" : null,
+        blind: save.private === true,
+        actorId: token?.actorId ?? null,
+        tokenId,
+        alias: token?.alias ?? null,
+        userId,
+        ...rollerId ? {} : { userGuess: true }
       }));
     }
     return out;
   }
-  function savesOf(msg) {
-    const helper = msg.flags?.[FLAG_SCOPE]?.targetHelper;
-    if (!helper || typeof helper !== "object") return null;
-    const saves = helper.saves;
-    return saves && typeof saves === "object" ? saves : null;
-  }
-  function indexTargets(helper) {
-    const out = {};
-    const list = Array.isArray(helper.targets) ? helper.targets : [];
-    for (const t of list) {
-      if (typeof t === "string") {
-        const id5 = t.split(".").pop();
-        out[id5] = { token: id5 };
-        continue;
-      }
-      if (t && typeof t === "object") {
-        const id5 = t.token ?? t.id ?? t.uuid?.split(".").pop();
-        if (id5) out[id5] = { token: id5, actor: t.actor ?? null, name: t.name ?? null };
+  function listSaves(msg) {
+    const helper = msg?.flags?.[FLAG_SCOPE]?.targetHelper;
+    if (!helper || typeof helper !== "object") return [];
+    const sceneOf = {};
+    for (const t of Array.isArray(helper.targets) ? helper.targets : []) {
+      if (typeof t !== "string") continue;
+      const m = /^Scene\.([^.]+)\.Token\.([^.]+)$/.exec(t);
+      if (m) sceneOf[m[2]] = m[1];
+    }
+    const out = [];
+    const variants = helper.saveVariants && typeof helper.saveVariants === "object" ? helper.saveVariants : helper.saves ? { null: { saves: helper.saves, dc: helper.dc, statistic: helper.statistic } } : {};
+    for (const [variantKey, variant] of Object.entries(variants)) {
+      const saves = variant?.saves && typeof variant.saves === "object" ? variant.saves : {};
+      for (const [tokenId, save] of Object.entries(saves)) {
+        if (save && typeof save === "object") out.push({ variantKey, variant, tokenId, sceneId: sceneOf[tokenId] ?? null, save });
       }
     }
     return out;
   }
   function firstD20(roll) {
-    if (!roll || typeof roll !== "object") return null;
-    const terms = Array.isArray(roll.terms) ? roll.terms : [];
+    const terms = Array.isArray(roll?.terms) ? roll.terms : [];
     for (const t of terms) if (Number(t?.faces) === 20 && Array.isArray(t.results) && t.results[0]) return t.results[0].result;
     return null;
+  }
+  function dieFormula2(roll) {
+    const die = (roll.terms ?? []).find((t) => Number(t?.faces) === 20);
+    if (!die) return "1d20";
+    return `${die.number ?? 1}d20${Array.isArray(die.modifiers) ? die.modifiers.join("") : ""}`;
   }
   function normalizeOutcome(v) {
     if (typeof v === "string") {
@@ -359,6 +392,9 @@
   function seqOf(id5) {
     const n = Number(String(id5).split(":").pop());
     return Number.isInteger(n) ? n : 0;
+  }
+  function safe(key) {
+    return String(key).replace(/[^A-Za-z0-9_-]/g, "_");
   }
   function numberOrNull2(v) {
     const n = Number(v);
@@ -376,31 +412,36 @@
   });
   var id4 = "flat-check";
   var on4 = ["create", "backfill"];
-  var PATTERNS = [
-    /<(?:span|div|h4)\s+class="[^"]*\bdice-total\b[^"]*"[^>]*>\s*(\d{1,2})\s*<\//i,
-    /<li\s+class="[^"]*\bdie\b[^"]*\bd20\b[^"]*"[^>]*>\s*(\d{1,2})\s*<\/li>/i,
-    /data-(?:result|roll|total)="(\d{1,2})"/i,
-    /\bclass="[^"]*\b(?:roll-result|flat-check-result|result)\b[^"]*"[^>]*>\s*(\d{1,2})\s*</i
+  var TOTAL = /<h4\s+class="[^"]*\bdice-total\b[^"]*"[^>]*>\s*(\d{1,2})\s*<\/h4>/i;
+  var TOTAL_FALLBACKS = [
+    /<(?:span|div)\s+class="[^"]*\bdice-total\b[^"]*"[^>]*>\s*(\d{1,2})\s*<\//i,
+    /<li\s+class="[^"]*\bdie\b[^"]*\bd20\b[^"]*"[^>]*>\s*(\d{1,2})\s*<\/li>/i
   ];
-  var DC_PATTERN = /\bDC\s*:?\s*(\d{1,2})\b/i;
+  var DC = /Flat Check DC is\s*(?:<b>)?\s*(\d{1,2})|\bDC\s*(?:is)?\s*:?\s*(?:<b>)?\s*(\d{1,2})\b/i;
+  var OUTCOME = /\bflat-check-(success|failure)\b/i;
   function matches4(msg) {
-    return msg.flags?.["pf2-flat-check"] === true;
+    const flags = msg?.flags;
+    return !!flags && typeof flags === "object" && Object.prototype.hasOwnProperty.call(flags, "pf2-flat-check");
   }
   function parseFlatCheckContent(html) {
-    if (typeof html !== "string") return { natural: null, dc: null };
+    if (typeof html !== "string") return { natural: null, dc: null, outcome: null };
     let natural = null;
-    for (const re of PATTERNS) {
+    for (const re of [TOTAL, ...TOTAL_FALLBACKS]) {
       const m = re.exec(html);
       if (m) {
         natural = Number(m[1]);
         break;
       }
     }
-    const dcm = DC_PATTERN.exec(html);
-    return { natural: natural !== null && natural >= 1 && natural <= 20 ? natural : null, dc: dcm ? Number(dcm[1]) : null };
+    if (natural !== null && (natural < 1 || natural > 20)) natural = null;
+    const dcm = DC.exec(html);
+    const dc = dcm ? Number(dcm[1] ?? dcm[2]) : null;
+    const om = OUTCOME.exec(html);
+    const outcome = om ? om[1].toLowerCase() : null;
+    return { natural, dc, outcome };
   }
   function extract4(msg, ctx, base) {
-    const { natural, dc } = parseFlatCheckContent(msg.content);
+    const { natural, dc, outcome } = parseFlatCheckContent(msg.content);
     return [base({
       id: `${msg._id}:flat:0`,
       dieIndex: 0,
@@ -410,11 +451,12 @@
       total: natural,
       type: "flat-check",
       source: "pf2-flat-check",
+      domains: ["flat-check"],
       dc,
       dcVisible: dc !== null ? true : null,
-      outcome: natural !== null && dc !== null ? natural >= dc ? "success" : "failure" : null,
+      outcome,
       userGuess: true,
-      // author is always the GM client; the attacker is only known via the speaker
+      // the author is always the GM client; the attacker is only known via the speaker
       ...natural === null ? { valueHidden: true } : {}
     })];
   }
@@ -589,12 +631,13 @@
     const minN = guards.minN ?? DEFAULT_GUARDS.minN;
     const thinN = guards.thinN ?? DEFAULT_GUARDS.thinN;
     if (n === 0) {
-      return { n: 0, mean: null, delta: null, z: null, percentile: null, zGuard: "none", nat20: faceStats(0, 0), nat1: faceStats(0, 0) };
+      return { n: 0, mean: null, delta: null, z: null, percentile: null, zGuard: "none", high: { count: 0, share: null, expected: 0.5 }, nat20: faceStats(0, 0), nat1: faceStats(0, 0) };
     }
     const mean = xs.reduce((s, v) => s + v, 0) / n;
     const delta = mean - D20.mean;
     const z = delta / (D20.sd / Math.sqrt(n));
     const zGuard = n < minN ? "none" : n < thinN ? "thin" : "ok";
+    const highCount = xs.filter((v) => v >= 11).length;
     return {
       n,
       mean,
@@ -602,6 +645,8 @@
       z,
       percentile: normalCdf(z),
       zGuard,
+      // The human-readable layer: share of "high" rolls (11–20; a fair die gives 50%).
+      high: { count: highCount, share: highCount / n, expected: 0.5 },
       nat20: faceStats(n, xs.filter((v) => v === 20).length),
       nat1: faceStats(n, xs.filter((v) => v === 1).length)
     };
@@ -611,6 +656,7 @@
     return {
       count,
       expected: n * p,
+      rate: n ? count / n : null,
       pAtLeast: n ? binomialAtLeast(n, count, p) : null,
       // excess
       pAtMost: n ? binomialAtMost(n, count, p) : null
