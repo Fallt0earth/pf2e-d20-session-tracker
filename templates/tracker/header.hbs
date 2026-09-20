@@ -1,23 +1,20 @@
 <header class="tracker-header">
   <div class="row">
     <label class="session-picker">
-      <span>{{localize "PF2E-D20.Controls.Session"}}</span>
+      <span>{{def.sessionWord}}</span>
       <select name="session">
         {{#each sessions}}
           <option value="{{this.key}}" {{#if this.selected}}selected{{/if}}>{{this.label}}{{#if this.isCurrent}} ★{{/if}} ({{this.n}})</option>
         {{/each}}
       </select>
     </label>
-    <div class="toggles">
-      <button type="button" class="pill {{#if (d20eq opts.groupBy "user")}}active{{/if}}" data-action="setGroupBy" data-value="user">{{localize "PF2E-D20.Controls.GroupByUser"}}</button>
-      <button type="button" class="pill {{#if (d20eq opts.groupBy "actor")}}active{{/if}}" data-action="setGroupBy" data-value="actor">{{localize "PF2E-D20.Controls.GroupByActor"}}</button>
-      <span class="sep"></span>
-      <button type="button" class="pill {{#if (d20eq opts.countMode "all")}}active{{/if}}" data-action="setCountMode" data-value="all">{{localize "PF2E-D20.Controls.CountAll"}}</button>
-      <button type="button" class="pill {{#if (d20eq opts.countMode "kept")}}active{{/if}}" data-action="setCountMode" data-value="kept">{{localize "PF2E-D20.Controls.CountKept"}}</button>
-      <span class="sep"></span>
-      <button type="button" class="pill {{#if opts.includeGM}}active{{/if}}" data-action="toggleGM">{{localize "PF2E-D20.Controls.IncludeGM"}}</button>
-      <button type="button" class="pill {{#if opts.includeRaw}}active{{/if}}" data-action="toggleRaw">{{localize "PF2E-D20.Controls.IncludeRaw"}}</button>
-    </div>
+    {{#if isGM}}{{#if def.isManual}}
+      {{#if def.manualOpen}}
+        <button type="button" class="pill running" data-action="endSession" title="{{localize "PF2E-D20.Definition.EndHint"}}"><i class="fa-solid fa-stop"></i> {{localize "PF2E-D20.Definition.End"}} <small>{{localize "PF2E-D20.Definition.RunningSince" time=def.manualSince}}</small></button>
+      {{else}}
+        <button type="button" class="pill" data-action="startSession" title="{{localize "PF2E-D20.Definition.StartHint"}}"><i class="fa-solid fa-play"></i> {{localize "PF2E-D20.Definition.Start"}}</button>
+      {{/if}}
+    {{/if}}{{/if}}
     <div class="actions">
       <button type="button" class="icon" data-action="refresh" title="{{localize "PF2E-D20.Controls.Refresh"}}"><i class="fa-solid fa-rotate"></i></button>
       <button type="button" class="icon" data-action="openReport" title="{{localize "PF2E-D20.Report.OpenHint"}}"><i class="fa-solid fa-scroll"></i></button>
@@ -28,5 +25,26 @@
       {{/if}}
     </div>
   </div>
-  {{#if preview}}<p class="note"><i class="fa-solid fa-flask"></i> {{localize "PF2E-D20.Source.Preview"}}</p>{{/if}}
+  <div class="row">
+    <div class="toggles">
+      <button type="button" class="pill {{#if (d20eq opts.groupBy "user")}}active{{/if}}" data-action="setGroupBy" data-value="user">{{localize "PF2E-D20.Controls.GroupByUser"}}</button>
+      <button type="button" class="pill {{#if (d20eq opts.groupBy "actor")}}active{{/if}}" data-action="setGroupBy" data-value="actor">{{localize "PF2E-D20.Controls.GroupByActor"}}</button>
+      <span class="sep"></span>
+      <button type="button" class="pill {{#if (d20eq opts.countMode "all")}}active{{/if}}" data-action="setCountMode" data-value="all">{{localize "PF2E-D20.Controls.CountAll"}}</button>
+      <button type="button" class="pill {{#if (d20eq opts.countMode "kept")}}active{{/if}}" data-action="setCountMode" data-value="kept">{{localize "PF2E-D20.Controls.CountKept"}}</button>
+      <span class="sep"></span>
+      <button type="button" class="pill {{#if opts.includeGM}}active{{/if}}" data-action="toggleGM">{{localize "PF2E-D20.Controls.IncludeGM"}}</button>
+      <button type="button" class="pill {{#if opts.includeRaw}}active{{/if}}" data-action="toggleRaw">{{localize "PF2E-D20.Controls.IncludeRaw"}}</button>
+    </div>
+    {{#if isGM}}
+      <label class="access" title="{{localize "PF2E-D20.Access.Hint"}}">
+        <i class="fa-solid fa-users"></i> <span>{{localize "PF2E-D20.Access.Label"}}</span>
+        <select name="playerAccess">
+          <option value="all" {{#if (d20eq playerAccess "all")}}selected{{/if}}>{{localize "PF2E-D20.Access.All"}}</option>
+          <option value="own" {{#if (d20eq playerAccess "own")}}selected{{/if}}>{{localize "PF2E-D20.Access.Own"}}</option>
+          <option value="none" {{#if (d20eq playerAccess "none")}}selected{{/if}}>{{localize "PF2E-D20.Access.None"}}</option>
+        </select>
+      </label>
+    {{/if}}
+  </div>
 </header>

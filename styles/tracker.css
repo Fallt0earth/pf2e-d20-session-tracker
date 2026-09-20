@@ -107,6 +107,27 @@
 .pf2e-d20-tracker .spark span.neg { background: var(--d20-cold); }
 .pf2e-d20-tracker .spark span.zero { height: 2px !important; }
 
+/* Header: GM quick controls */
+.pf2e-d20-tracker .tracker-header { display: flex; flex-direction: column; gap: 0.35rem; }
+.pf2e-d20-tracker label.access { margin-left: auto; display: flex; align-items: center; gap: 0.3rem; font-size: var(--font-size-12, 12px); color: var(--d20-muted); }
+.pf2e-d20-tracker label.access select { height: 1.6rem; font-size: var(--font-size-12, 12px); }
+.pf2e-d20-tracker button.pill.running { border-color: var(--d20-hot); color: var(--d20-hot); }
+.pf2e-d20-tracker button.pill small { opacity: 0.8; margin-left: 0.25rem; }
+
+/* Sessions tab: session definition panel */
+.pf2e-d20-tracker fieldset.definition { border: 1px solid var(--d20-line); border-radius: 4px; padding: 0.4rem 0.6rem; margin: 0 0 0.5rem; }
+.pf2e-d20-tracker fieldset.definition legend { font-weight: 700; padding: 0 0.3rem; }
+.pf2e-d20-tracker .def-row { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; align-items: center; font-size: var(--font-size-12, 12px); }
+.pf2e-d20-tracker .def-row label { display: flex; align-items: center; gap: 0.3rem; }
+.pf2e-d20-tracker .def-row select, .pf2e-d20-tracker .def-row input { height: 1.6rem; font-size: var(--font-size-12, 12px); }
+.pf2e-d20-tracker .def-row input[type="number"] { width: 3.5rem; }
+.pf2e-d20-tracker .def-row input[type="text"] { width: 11rem; }
+.pf2e-d20-tracker .def-preview { margin: 0.35rem 0; font-size: var(--font-size-12, 12px); color: var(--d20-muted); }
+.pf2e-d20-tracker tr.unscheduled td { font-style: italic; }
+.pf2e-d20-rebucket { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; max-height: 14rem; overflow: auto; font-size: 0.9em; }
+.pf2e-d20-rebucket ul { margin: 0.2rem 0 0; padding-left: 1rem; }
+label.split-option { display: block; margin: 0.2rem 0; }
+
 /* Luck meter: a track with a centre tick at 50%; the fill grows from the centre toward the value. */
 .pf2e-d20-tracker .luck-meter { position: relative; display: inline-block; width: 5.5rem; height: 8px; border-radius: 4px; background: var(--d20-bg-soft); vertical-align: middle; margin-right: 0.35rem; overflow: hidden; }
 .pf2e-d20-tracker .luck-meter.wide { display: block; width: 100%; height: 10px; margin: 0.35rem 0 0; }
@@ -143,5 +164,8 @@
 .pf2e-d20-tracker .sessions-toolbar .spacer { flex: 1; }
 .pf2e-d20-tracker button.danger { color: #c0392b; }
 .pf2e-d20-tracker tr.excluded td { opacity: 0.55; }
-.pf2e-d20-tracker td.row-actions { white-space: nowrap; }
+.pf2e-d20-tracker td.row-actions { white-space: nowrap; text-align: right; }
+.pf2e-d20-tracker td.row-actions button { display: inline-flex; align-items: center; justify-content: center; width: auto; vertical-align: middle; margin: 0 1px; }
+.pf2e-d20-tracker td.row-actions button.icon { width: 1.8rem; height: 1.8rem; line-height: 1; }
+.pf2e-d20-tracker label.access span, .pf2e-d20-tracker .def-row label { white-space: nowrap; }
 .pf2e-d20-tracker td.who em { font-style: normal; font-size: var(--font-size-11, 11px); color: var(--d20-muted); }

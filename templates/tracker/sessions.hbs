@@ -1,5 +1,32 @@
 <section class="tab sessions {{tabs.sessions.cssClass}}" data-tab="sessions" data-group="primary">
   <div class="sessions-body">
+    {{#if isGM}}
+      <fieldset class="definition">
+        <legend><i class="fa-solid fa-clock"></i> {{localize "PF2E-D20.Definition.Title"}}</legend>
+        <div class="def-row">
+          <label>{{localize "PF2E-D20.Definition.Mode"}}
+            <select name="sessionMode">
+              <option value="daily" {{#if def.isDaily}}selected{{/if}}>{{localize "PF2E-D20.Settings.SessionMode.Daily"}}</option>
+              <option value="gap" {{#if def.isGap}}selected{{/if}}>{{localize "PF2E-D20.Settings.SessionMode.Gap"}}</option>
+              <option value="manual" {{#if def.isManual}}selected{{/if}}>{{localize "PF2E-D20.Settings.SessionMode.Manual"}}</option>
+            </select>
+          </label>
+          {{#if def.isDaily}}
+            <label>{{localize "PF2E-D20.Definition.Boundary"}} <input type="number" name="boundaryHour" min="0" max="23" step="1" value="{{def.boundaryHour}}">:00</label>
+            <label title="{{localize "PF2E-D20.Definition.UsualStartHint"}}">{{localize "PF2E-D20.Definition.UsualStart"}} <input type="number" name="usualStart" min="0" max="23" step="1" placeholder="19">:00
+              <button type="button" class="pill" data-action="applyUsualStart">{{localize "PF2E-D20.Definition.UsualStartApply"}}</button></label>
+          {{else}}
+            <label title="{{localize "PF2E-D20.Settings.SessionGapHours.Hint"}}">{{localize "PF2E-D20.Definition.Gap"}} <input type="number" name="sessionGapHours" min="1" max="24" step="0.5" value="{{def.gapHours}}"></label>
+          {{/if}}
+          <label>{{localize "PF2E-D20.Definition.Timezone"}} <input type="text" name="timezone" value="{{def.timezone}}" spellcheck="false"></label>
+        </div>
+        <p class="def-preview"><i class="fa-solid fa-circle-info"></i> {{def.preview}}</p>
+        <div class="def-row">
+          <button type="button" class="pill" data-action="rebucket" title="{{localize "PF2E-D20.Definition.RebucketHint"}}"><i class="fa-solid fa-arrows-rotate"></i> {{localize "PF2E-D20.Definition.Rebucket"}}</button>
+        </div>
+      </fieldset>
+    {{/if}}
+
     <div class="sessions-toolbar">
       {{#if isGM}}
         <button type="button" class="pill" data-action="catchUp" title="{{localize "PF2E-D20.Sessions.CatchUpHint"}}"><i class="fa-solid fa-clock-rotate-left"></i> {{localize "PF2E-D20.Controls.CatchUp"}}</button>
@@ -10,22 +37,29 @@
       <button type="button" class="pill {{#if showAll}}active{{/if}}" data-action="toggleShowAll">{{localize "PF2E-D20.Controls.ShowAll"}}</button>
     </div>
     <table class="sessions-list">
-      <thead><tr><th class="who">{{localize "PF2E-D20.Controls.Session"}}</th><th>{{localize "PF2E-D20.Tonight.Dice"}}</th><th>{{localize "PF2E-D20.Sessions.First"}}</th><th>{{localize "PF2E-D20.Sessions.Last"}}</th><th></th></tr></thead>
+      <thead><tr><th class="who">{{def.sessionWord}}</th><th>{{localize "PF2E-D20.Tonight.Rolls"}}</th><th>{{localize "PF2E-D20.Sessions.First"}}</th><th>{{localize "PF2E-D20.Sessions.Last"}}</th><th></th></tr></thead>
       <tbody>
         {{#each sessions}}
-          <tr class="{{#if this.selected}}selected{{/if}} {{#if this.excluded}}excluded{{/if}}">
-            <td class="who"><b>{{this.label}}</b>{{#if this.isCurrent}} ★{{/if}}{{#if this.excluded}} <em>{{localize "PF2E-D20.Sessions.Excluded"}}</em>{{/if}}{{#unless (d20eq this.label this.autoLabel)}}<small>{{this.autoLabel}}</small>{{/unless}}</td>
+          <tr class="{{#if this.selected}}selected{{/if}} {{#if this.excluded}}excluded{{/if}} {{#if this.unscheduled}}unscheduled{{/if}}">
+            <td class="who"><b>{{this.label}}</b>{{#if this.isCurrent}} ★{{/if}}{{#if this.excluded}} <em>{{localize "PF2E-D20.Sessions.Excluded"}}</em>{{/if}}{{#unless (d20eq this.label this.autoLabel)}}<small>{{this.autoLabel}}</small>{{/unless}}{{#if this.unscheduled}}<small>{{localize "PF2E-D20.Sessions.UnscheduledHint"}}</small>{{/if}}</td>
             <td>{{this.n}}</td>
             <td>{{d20time this.firstTs}}</td>
             <td>{{d20time this.lastTs}}</td>
             <td class="row-actions">
-              <button type="button" class="pill" data-action="selectSession" data-key="{{this.key}}"><i class="fa-solid fa-fire"></i> {{localize "PF2E-D20.Tabs.Tonight"}}</button>
+              <button type="button" class="pill" data-action="selectSession" data-key="{{this.key}}"><i class="fa-solid fa-fire"></i> {{localize "PF2E-D20.Sessions.View"}}</button>
               <button type="button" class="icon plain" data-action="exportSession" data-key="{{this.key}}" data-format="csv" title="{{localize "PF2E-D20.Export.Csv"}}"><i class="fa-solid fa-file-csv"></i></button>
               <button type="button" class="icon plain" data-action="exportSession" data-key="{{this.key}}" data-format="json" title="{{localize "PF2E-D20.Export.Json"}}"><i class="fa-solid fa-file-code"></i></button>
               {{#if ../isGM}}
-                <button type="button" class="icon plain" data-action="renameSession" data-key="{{this.key}}" title="{{localize "PF2E-D20.Sessions.Rename"}}"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" class="icon plain" data-action="toggleExclude" data-key="{{this.key}}" title="{{localize "PF2E-D20.Sessions.ToggleExclude"}}"><i class="fa-solid {{#if this.excluded}}fa-eye{{else}}fa-eye-slash{{/if}}"></i></button>
-                <button type="button" class="icon plain danger" data-action="deleteSession" data-key="{{this.key}}" title="{{localize "PF2E-D20.Sessions.Delete"}}"><i class="fa-solid fa-trash"></i></button>
+                {{#if this.unscheduled}}
+                  {{#if this.hasTargets}}<button type="button" class="icon plain" data-action="assignUnscheduled" title="{{localize "PF2E-D20.Sessions.AssignUnscheduled"}}"><i class="fa-solid fa-right-to-bracket"></i></button>{{/if}}
+                  <button type="button" class="icon plain danger" data-action="discardUnscheduled" title="{{localize "PF2E-D20.Sessions.DiscardUnscheduled"}}"><i class="fa-solid fa-trash"></i></button>
+                {{else}}
+                  {{#if this.canMerge}}<button type="button" class="icon plain" data-action="mergePrevious" data-key="{{this.key}}" title="{{localize "PF2E-D20.Sessions.Merge"}}"><i class="fa-solid fa-object-group"></i></button>{{/if}}
+                  {{#if this.canSplit}}<button type="button" class="icon plain" data-action="splitSession" data-key="{{this.key}}" title="{{localize "PF2E-D20.Sessions.Split"}}"><i class="fa-solid fa-scissors"></i></button>{{/if}}
+                  <button type="button" class="icon plain" data-action="renameSession" data-key="{{this.key}}" title="{{localize "PF2E-D20.Sessions.Rename"}}"><i class="fa-solid fa-pen"></i></button>
+                  <button type="button" class="icon plain" data-action="toggleExclude" data-key="{{this.key}}" title="{{localize "PF2E-D20.Sessions.ToggleExclude"}}"><i class="fa-solid {{#if this.excluded}}fa-eye{{else}}fa-eye-slash{{/if}}"></i></button>
+                  <button type="button" class="icon plain danger" data-action="deleteSession" data-key="{{this.key}}" title="{{localize "PF2E-D20.Sessions.Delete"}}"><i class="fa-solid fa-trash"></i></button>
+                {{/if}}
               {{/if}}
             </td>
           </tr>

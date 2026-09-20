@@ -1,10 +1,13 @@
 // @ts-check
-// Session bucketing (decision D1): one session = one real-world evening. Bucket by the message's
-// ms-epoch timestamp in a fixed world timezone with a boundary hour (default 06:00 America/Chicago):
-// anything before the boundary belongs to the previous calendar day. Pure: Intl only, no Foundry.
+// Calendar helpers for session bucketing. The "daily" definition (decision D1): one session per
+// real-world day in a fixed world timezone with a boundary hour (default 06:00 America/Chicago) —
+// anything before the boundary belongs to the previous calendar day. The other definitions (gap,
+// manual) live in sessionizer.js and use these helpers for local dates. Pure: Intl only, no Foundry.
 
 export const DEFAULT_TIMEZONE = "America/Chicago";
 export const DEFAULT_BOUNDARY_HOUR = 6;
+/** Key of the bucket that holds rolls made outside any session (manual mode). */
+export const UNSCHEDULED = "unscheduled";
 
 const DAY_MS = 86_400_000;
 /** @type {Map<string, Intl.DateTimeFormat>} */
@@ -23,6 +26,11 @@ function formatterFor(timezone) {
   return fmt;
 }
 
+/** True when the runtime knows this IANA timezone. */
+export function isValidTimezone(timezone) {
+  try { new Intl.DateTimeFormat("en-US", { timeZone: timezone }); return true; } catch { return false; }
+}
+
 /**
  * Wall-clock components of `ts` in `timezone`.
  * @param {number} ts
@@ -39,7 +47,7 @@ export function wallClock(ts, timezone = DEFAULT_TIMEZONE) {
 }
 
 /**
- * The evening key for a timestamp: `YYYY-MM-DD` of the calendar day the evening started on.
+ * The daily key for a timestamp: `YYYY-MM-DD` of the calendar day the session started on.
  * @param {number} ts ms epoch (message.timestamp)
  * @param {{timezone?: string, boundaryHour?: number}} [opts]
  * @returns {string}
@@ -51,20 +59,39 @@ export function sessionKeyFor(ts, { timezone = DEFAULT_TIMEZONE, boundaryHour = 
   return isoDate(dayUtc);
 }
 
+/** Plain local calendar date of a timestamp (no boundary shift). */
+export function localDateKey(ts, timezone = DEFAULT_TIMEZONE) {
+  return sessionKeyFor(ts, { timezone, boundaryHour: 0 });
+}
+
+/** Split a key into its date and its same-day sequence number: "2026-09-19~2" → { base, seq: 2 }. */
+export function parseKey(key) {
+  const [base, seq] = String(key).split("~");
+  return { base, seq: seq ? Number(seq) : 1 };
+}
+
 /**
- * Human label for a key: `2026-09-15 Tue`.
+ * Human label for a key: `2026-09-15 Tue`, `2026-09-19 Sat (2)` for a second session that date.
  * @param {string} key
  * @param {string} [locale]
  */
 export function sessionLabel(key, locale = "en-US") {
-  const [y, m, d] = key.split("-").map(Number);
+  if (key === UNSCHEDULED) return "Unscheduled";
+  const { base, seq } = parseKey(key);
+  const [y, m, d] = base.split("-").map(Number);
+  if (!y || !m || !d) return String(key);
   const weekday = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(Date.UTC(y, m - 1, d));
-  return `${key} ${weekday}`;
+  return `${base} ${weekday}${seq > 1 ? ` (${seq})` : ""}`;
 }
 
-/** Sort helper: keys are ISO dates, so lexical order is chronological. */
+/** Chronological order of keys; the unscheduled bucket sorts before everything (so it lands last in newest-first lists). */
 export function compareKeys(a, b) {
-  return a < b ? -1 : a > b ? 1 : 0;
+  if (a === b) return 0;
+  if (a === UNSCHEDULED) return -1;
+  if (b === UNSCHEDULED) return 1;
+  const pa = parseKey(a), pb = parseKey(b);
+  if (pa.base !== pb.base) return pa.base < pb.base ? -1 : 1;
+  return pa.seq - pb.seq;
 }
 
 function isoDate(utcMs) {

@@ -40,11 +40,26 @@ instance at http://your-docker-host:30000 through the headless harness (`foundry
 | + | Journal page text | any write | readable per-player table in the hidden page | PASS 2026-09-15 (532 chars) | — |
 | + | Player view hides tonight's secret rolls | PlayerA `api.summarize` / window | secret count 0 for the current evening | PASS 2026-09-15 (window screenshot; API after the view-options fix: 111 stored, 14 secret, 97 visible, own row secret 0) | — |
 
+## 1.1 — session definition and access control (`dev/e2e/verify-m5.mjs`, 2026-09-19: 16/16)
+| Item | How it is produced | Expected | Result |
+|---|---|---|---|
+| Overnight game, by pause | raw d20 messages with simulated timestamps Sat 22:00 → Sun 07:30 (crosses midnight and the 06:00 turnover) | one session `2026-01-10` with 5 rolls | PASS |
+| Two games on one date | 13:00–15:00 and 21:00–23:00 | `2026-01-17` and `2026-01-17~2` | PASS |
+| One journal page per session | read the log journal | four pages keyed by session | PASS |
+| Re-apply: by pause → by day | `planRebucket` + `applyRebucket` with turnover 06:00 | overnight game splits 4 + 3, `~2` disappears, real sessions untouched | PASS |
+| Re-apply: back to by pause; again | same | original layout restored; second run moves 0 | PASS |
+| Split, then merge with previous | split at the Sun 05:30 pause, merge back | new key `2026-01-11~2`; merge folds into `2026-01-10` (previous by time, not by key) | PASS after fix |
+| Manual Start / End | roll, Start, roll ×2, End, roll | 2 in the session, 2 unscheduled, running key while open, none after End | PASS |
+| Move unscheduled into a session | `moveRecords("unscheduled", key)` | rolls counted in the session | PASS |
+| Players see: nothing → whole table | GM changes the header control while PlayerA is connected with the window open | window closes and button disappears, then both return, no reload | PASS |
+| Round trip | by day → by pause → manual → by day, cleanup | stored sessions identical to the start (`2026-09-15`: 112) | PASS |
+
 ## How to re-run
 ```
 node dev/e2e/foundry.mjs smoke                # module loads, versions, users
 node dev/e2e/make-fixtures.mjs                # regenerate the corpus (adds messages to the dev world)
 node dev/e2e/spikes.mjs s1|s2|s3|s4|s5|s6|s7  # individual spikes
 node dev/e2e/verify-m2.mjs                    # M2 acceptance; deletes all chat messages on the dev world
+node dev/e2e/verify-m5.mjs                    # 1.1 session definition + access control; run dev/backup.ps1 first (it re-buckets stored data)
 npm test && npm run lint
 ```

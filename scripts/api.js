@@ -22,7 +22,12 @@ export function buildApi({ open, openReport, close, getSource, catchUp }) {
     summarize: (key, overrides) => buildSessionModel(getSource()?.getSession(key) ?? [], viewOptionsFor(getSource(), overrides)),
     normalize: messageToRollRecords,
     classifyMessage,
-    sessionKeyFor: (ts) => sessionKeyFor(ts, bucketOptions()),
+    /** The session a timestamp belongs to under the world's current session definition. */
+    sessionKeyFor: (ts) => getSource()?.assignKey(ts) ?? sessionKeyFor(ts, bucketOptions()),
+    /** The running session, or null when none is (gap mode after the idle gap, manual mode with none started). */
+    currentKey: () => getSource()?.currentKey() ?? null,
+    /** The session definition in force: { mode, timezone, boundaryHour, gapHours, manualOpen }. */
+    sessionConfig: () => getSource()?.config() ?? null,
     sessionLabel,
     stats,
   });

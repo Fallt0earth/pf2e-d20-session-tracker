@@ -9,7 +9,8 @@ import { decorateFunGroup, decorateAwards } from "./fun-decorate.js";
 import { decorateRow, partySentence, luckPercent } from "./tonight-decorate.js";
 import { exportRecords } from "./export.js";
 import { viewOptionsFor } from "./view-options.js";
-import { sessionLabel } from "../sessions/bucket.js";
+import { sessionLabel, wallClock, isValidTimezone, UNSCHEDULED } from "../sessions/bucket.js";
+import { dailyExample, boundaryForUsualStart } from "../sessions/sessionizer.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const T = (name) => `modules/${MODULE_ID}/templates/tracker/${name}.hbs`;
@@ -38,6 +39,14 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
       openReport: TrackerApp.#onOpenReport,
       exportSession: TrackerApp.#onExport,
       exportAll: TrackerApp.#onExport,
+      startSession: TrackerApp.#onStartSession,
+      endSession: TrackerApp.#onEndSession,
+      applyUsualStart: TrackerApp.#onApplyUsualStart,
+      rebucket: TrackerApp.#onRebucket,
+      mergePrevious: TrackerApp.#onMergePrevious,
+      splitSession: TrackerApp.#onSplitSession,
+      assignUnscheduled: TrackerApp.#onAssignUnscheduled,
+      discardUnscheduled: TrackerApp.#onDiscardUnscheduled,
     },
   };
 
@@ -104,12 +113,39 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _sessionList() {
-    const all = this.source.listSessions();
+    const unscheduledLabel = game.i18n.localize("PF2E-D20.Sessions.Unscheduled");
+    const all = this.source.listSessions().map((s) => (s.unscheduled ? { ...s, label: unscheduledLabel, autoLabel: unscheduledLabel } : s));
     const min = getSetting(SETTINGS.minRollsToList);
-    const current = this.source.currentKey();
-    const list = this.showAll ? all : all.filter((s) => (s.n >= min && !s.excluded) || s.key === current || s.key === this.sessionKey);
-    if (!list.some((s) => s.key === current)) list.unshift({ key: current, label: sessionLabel(current), n: 0, firstTs: null, lastTs: null, empty: true });
+    const current = this.source.currentKey(); // null when no session is running (gap and manual modes)
+    const list = this.showAll ? all : all.filter((s) => (s.n >= min && !s.excluded && !s.unscheduled) || s.key === current || s.key === this.sessionKey);
+    if (current && !list.some((s) => s.key === current)) list.unshift({ key: current, label: sessionLabel(current), autoLabel: sessionLabel(current), n: 0, firstTs: null, lastTs: null, empty: true });
     return list;
+  }
+
+  /** The GM-facing session definition panel and the manual Start/End state. */
+  _definitionContext() {
+    const cfg = this.source.config();
+    const L = (k, d) => (d ? game.i18n.format(`PF2E-D20.Definition.${k}`, d) : game.i18n.localize(`PF2E-D20.Definition.${k}`));
+    let preview;
+    if (cfg.mode === "gap") preview = L("PreviewGap", { hours: cfg.gapHours });
+    else if (cfg.mode === "manual") preview = L("PreviewManual", { hours: cfg.gapHours });
+    else {
+      const ex = dailyExample(cfg.boundaryHour);
+      preview = ex ? L("PreviewDaily", { boundary: ex.boundary, tz: cfg.timezone, time: ex.exampleTime }) : L("PreviewDailyMidnight", { tz: cfg.timezone });
+    }
+    const open = cfg.manualOpen;
+    return {
+      mode: cfg.mode, isDaily: cfg.mode === "daily", isGap: cfg.mode === "gap", isManual: cfg.mode === "manual",
+      gapHours: cfg.gapHours, timezone: cfg.timezone, boundaryHour: cfg.boundaryHour, preview,
+      manualOpen: !!open, manualSince: open ? this._clock(open.startedTs) : null, manualKey: open?.key ?? null,
+      sessionWord: game.i18n.localize(cfg.mode === "daily" ? "PF2E-D20.Controls.Session" : "PF2E-D20.Controls.SessionGeneric"),
+    };
+  }
+
+  /** HH:MM in the world timezone. */
+  _clock(ts) {
+    const w = wallClock(ts, this.source.config().timezone);
+    return `${String(w.hour).padStart(2, "0")}:${String(w.minute).padStart(2, "0")}`;
   }
 
   async _prepareContext(options) {
@@ -126,13 +162,17 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const activeTab = this.tabGroups.primary ?? TrackerApp.TABS.primary.initial;
     context.fun = activeTab === "fun" ? this._funModel(records, opts) : { empty: true, deferred: true };
     context.history = activeTab === "history" ? this._historyModel(opts) : { empty: true, deferred: true };
+    const current = this.source.currentKey();
+    const hasTargets = this.source.listSessions().some((s) => !s.unscheduled);
     Object.assign(context, {
+      def: this._definitionContext(),
+      playerAccess: getSetting(SETTINGS.playerAccess),
       isGM: game.user.isGM,
       preview: this.source.kind === "preview",
       captureEnabled: getSetting(SETTINGS.captureEnabled),
-      sessions: sessions.map((s) => ({ ...s, selected: s.key === this.sessionKey, isCurrent: s.key === this.source.currentKey() })),
+      sessions: sessions.map((s) => ({ ...s, selected: s.key === this.sessionKey, isCurrent: !!current && s.key === current, canMerge: !s.unscheduled && !s.empty && !!this.source.previousKey?.(s.key), canSplit: !s.unscheduled && s.n > 1, hasTargets })),
       sessionKey: this.sessionKey,
-      sessionLabel: sessionLabel(this.sessionKey),
+      sessionLabel: sessions.find((s) => s.key === this.sessionKey)?.label ?? sessionLabel(this.sessionKey),
       showAll: this.showAll,
       opts,
       model: this._decorate(model),
@@ -151,7 +191,7 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** History across every non-excluded evening, decorated for the template. */
   _historyModel(opts) {
-    const sessions = this.source.listSessions().filter((s) => !s.excluded).sort((a, b) => (a.key < b.key ? -1 : 1))
+    const sessions = this.source.listSessions().filter((s) => !s.excluded && !s.unscheduled).reverse() // listSessions is newest first, by first roll
       .map((s) => ({ key: s.key, label: s.label, records: this.source.getSession(s.key) }));
     const m = buildHistoryModel(sessions, opts);
     const band = (b) => game.i18n.localize(`PF2E-D20.Band.${b}`);
@@ -182,12 +222,132 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     super._onRender?.(context, options);
     const select = this.element.querySelector('select[name="session"]');
     select?.addEventListener("change", (ev) => { this.sessionKey = ev.currentTarget.value; this.render({ parts: ["header", "tonight", "fun"] }); });
+    if (!game.user.isGM) return;
+    // GM quick controls write world settings directly; every client follows through the setting's onChange.
+    const bind = (selector, handler) => this.element.querySelector(selector)?.addEventListener("change", (ev) => handler(ev.currentTarget));
+    bind('select[name="playerAccess"]', (el) => setSetting(SETTINGS.playerAccess, el.value));
+    bind('select[name="sessionMode"]', async (el) => { if (el.value !== "manual") await this.source.endManual?.(); await setSetting(SETTINGS.sessionMode, el.value); });
+    bind('input[name="sessionGapHours"]', (el) => { const v = Number(el.value); if (v >= 1 && v <= 24) setSetting(SETTINGS.sessionGapHours, v); });
+    bind('input[name="boundaryHour"]', (el) => { const v = Math.trunc(Number(el.value)); if (v >= 0 && v <= 23) setSetting(SETTINGS.boundaryHour, v); });
+    bind('input[name="timezone"]', (el) => {
+      const tz = el.value.trim();
+      if (isValidTimezone(tz)) setSetting(SETTINGS.timezone, tz);
+      else { ui.notifications.warn(game.i18n.format("PF2E-D20.Definition.BadTimezone", { tz })); el.value = getSetting(SETTINGS.timezone); }
+    });
   }
 
   /** The Fun and History tabs compute their models on demand, so re-render that part on switch. */
   changeTab(tab, group, options) {
     super.changeTab(tab, group, options);
     if (tab === "fun" || tab === "history") this.render({ parts: [tab] });
+  }
+
+  static async #onStartSession() {
+    if (!game.user.isGM) return;
+    const key = await this.source.startManual();
+    if (key) { this.sessionKey = key; this.render({ parts: ["header", "tonight", "sessions"] }); }
+  }
+
+  static async #onEndSession() {
+    if (!game.user.isGM) return;
+    await this.source.endManual();
+    this.render({ parts: ["header", "tonight", "sessions"] });
+  }
+
+  /** "We usually start at HH" → put the day boundary 12 hours opposite, where a game is least likely to be running. */
+  static async #onApplyUsualStart() {
+    if (!game.user.isGM) return;
+    const input = this.element.querySelector('input[name="usualStart"]');
+    const hour = Math.trunc(Number(input?.value));
+    if (!(hour >= 0 && hour <= 23)) return;
+    await setSetting(SETTINGS.boundaryHour, boundaryForUsualStart(hour));
+  }
+
+  /** Re-apply the current session definition to every stored roll, after showing what would change. */
+  static async #onRebucket() {
+    if (!game.user.isGM) return;
+    await this.source.flush();
+    const { after, diff } = this.source.planRebucket();
+    const L = (k, d) => (d ? game.i18n.format(`PF2E-D20.Definition.${k}`, d) : game.i18n.localize(`PF2E-D20.Definition.${k}`));
+    if (!diff.moved) return ui.notifications.info(L("RebucketNothing"));
+    const list = (rows) => `<ul>${rows.map((r) => `<li>${foundry.utils.escapeHTML(sessionLabel(r.key))}: <b>${r.n}</b></li>`).join("")}</ul>`;
+    const ok = await foundry.applications.api.DialogV2.confirm({
+      window: { title: L("Rebucket") },
+      content: `<p>${L("RebucketConfirm", { moved: diff.moved, created: diff.created.length, removed: diff.removed.length })}</p><div class="pf2e-d20-rebucket"><div><b>${L("Before")}</b>${list(diff.before)}</div><div><b>${L("After")}</b>${list(diff.after)}</div></div><p><small>${L("RebucketNote")}</small></p>`,
+    });
+    if (!ok) return;
+    await this.source.applyRebucket(after);
+    this.sessionKey = null;
+    ui.notifications.info(L("RebucketDone", { moved: diff.moved }));
+    this.render({ parts: ["header", "tonight", "sessions"] });
+  }
+
+  static async #onMergePrevious(_event, target) {
+    if (!game.user.isGM) return;
+    const key = target.dataset.key;
+    const into = this.source.previousKey(key);
+    if (!into) return;
+    const ok = await foundry.applications.api.DialogV2.confirm({
+      window: { title: game.i18n.localize("PF2E-D20.Sessions.Merge") },
+      content: `<p>${game.i18n.format("PF2E-D20.Sessions.MergeConfirm", { from: sessionLabel(key), into: sessionLabel(into) })}</p>`,
+    });
+    if (!ok) return;
+    await this.source.mergeSessions(key, into);
+    this.sessionKey = into;
+    this.render({ parts: ["header", "tonight", "sessions"] });
+  }
+
+  /** Offer the longest pauses in the session as split points (no typing of times or timezones). */
+  static async #onSplitSession(_event, target) {
+    if (!game.user.isGM) return;
+    const key = target.dataset.key;
+    const stamps = [...new Set(this.source.getSession(key).map((r) => r.ts))].sort((a, b) => a - b);
+    const gaps = [];
+    for (let i = 1; i < stamps.length; i++) gaps.push({ at: stamps[i], prev: stamps[i - 1], ms: stamps[i] - stamps[i - 1] });
+    const options = gaps.filter((g) => g.ms >= 60_000).sort((a, b) => b.ms - a.ms).slice(0, 6).sort((a, b) => a.at - b.at);
+    if (!options.length) return ui.notifications.info(game.i18n.localize("PF2E-D20.Sessions.SplitNone"));
+    const mins = (ms) => (ms >= 3_600_000 ? `${Math.floor(ms / 3_600_000)}h ${Math.round((ms % 3_600_000) / 60_000)}m` : `${Math.round(ms / 60_000)}m`);
+    const count = (ts) => this.source.getSession(key).filter((r) => r.ts >= ts).length;
+    const choices = options.map((g, i) => `<label class="split-option"><input type="radio" name="at" value="${g.at}" ${i === 0 ? "checked" : ""}> ${game.i18n.format("PF2E-D20.Sessions.SplitOption", { pause: mins(g.ms), from: this._clock(g.prev), to: this._clock(g.at), after: count(g.at) })}</label>`).join("");
+    const at = await foundry.applications.api.DialogV2.prompt({
+      window: { title: game.i18n.localize("PF2E-D20.Sessions.Split") },
+      content: `<p>${game.i18n.format("PF2E-D20.Sessions.SplitHint", { label: sessionLabel(key) })}</p>${choices}`,
+      ok: { label: game.i18n.localize("PF2E-D20.Sessions.Split"), callback: (_ev, button) => Number(button.form.elements.at.value) },
+      rejectClose: false,
+    });
+    if (!at) return;
+    const newKey = await this.source.splitSession(key, at);
+    if (newKey) this.sessionKey = newKey;
+    this.render({ parts: ["header", "tonight", "sessions"] });
+  }
+
+  static async #onAssignUnscheduled() {
+    if (!game.user.isGM) return;
+    const targets = this.source.listSessions().filter((s) => !s.unscheduled);
+    if (!targets.length) return;
+    const options = targets.map((s) => `<option value="${s.key}">${foundry.utils.escapeHTML(s.label)} (${s.n})</option>`).join("");
+    const key = await foundry.applications.api.DialogV2.prompt({
+      window: { title: game.i18n.localize("PF2E-D20.Sessions.AssignUnscheduled") },
+      content: `<p>${game.i18n.localize("PF2E-D20.Sessions.AssignHint")}</p><select name="key">${options}</select>`,
+      ok: { label: game.i18n.localize("PF2E-D20.Sessions.AssignUnscheduled"), callback: (_ev, button) => button.form.elements.key.value },
+      rejectClose: false,
+    });
+    if (!key) return;
+    await this.source.moveRecords(UNSCHEDULED, key);
+    this.sessionKey = key;
+    this.render({ parts: ["header", "tonight", "sessions"] });
+  }
+
+  static async #onDiscardUnscheduled() {
+    if (!game.user.isGM) return;
+    const ok = await foundry.applications.api.DialogV2.confirm({
+      window: { title: game.i18n.localize("PF2E-D20.Sessions.DiscardUnscheduled") },
+      content: `<p>${game.i18n.localize("PF2E-D20.Sessions.DiscardConfirm")}</p>`,
+    });
+    if (!ok) return;
+    await this.source.deleteSession(UNSCHEDULED);
+    if (this.sessionKey === UNSCHEDULED) this.sessionKey = null;
+    this.render({ parts: ["header", "tonight", "sessions"] });
   }
 
   static #onExport(_event, target) {

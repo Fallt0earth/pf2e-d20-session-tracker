@@ -384,7 +384,18 @@ Re-scoped 2026-09-15: the macro is a **validation tool** for the normalizer agai
 ### M4 — Foundry v14 / PF2e 8.x pass (1 session, when David upgrades the Forge game)
 - [ ] Bump `compatibility`; confirm the `pf2e.reroll` options-object form (already handled); re-run SCOPE §9 on 14.36x + PF2e 8.5 and `pf2-flat-check` 4.0.0; Forge gate.
 
-### M5 — Configurable session definition (goal set by David 2026-09-19; target 1.1.0)
+### M5 — Configurable session definition (goal set by David 2026-09-19) — built and verified 2026-09-19, released as 1.1.0
+
+**Status.**
+- [x] `sessions/sessionizer.js` (pure): `Sessionizer` with `peek` / `assign` / `current` / `manualExpired`, `rebucket`, `rebucketDiff`, `chronological`, `boundaryForUsualStart`, `dailyExample`. Assignment is **interval-based** (nearest stored session within the gap), not "previous roll"-based, so it is order-independent and live capture, catch-up and re-bucketing give identical keys. 13 unit tests: daily bit-for-bit, the 22:00–07:30 game, the 03:00–09:00 game, two games on one date, inclusive threshold, late-arriving rolls, both DST nights, another timezone, manual inside / before / after / forgotten End, re-bucket ids-and-counts, idempotence and the daily → gap → daily round trip, manual intervals authoritative, chronological order.
+- [x] Settings `sessionMode`, `sessionGapHours`, hidden `manualSession`. The normalizer resolves the session key **lazily** (on the first record), so a chat message without a d20 can never open a session.
+- [x] Store rewritten around the sessionizer: cached spans, known record ids keep their session, `moveRecords`, `mergeSessions`, `splitSession`, `startManual` / `endManual` / `autoCloseManual`, `planRebucket` / `applyRebucket`; emptied pages are removed, empty manual sessions keep theirs. Catch-up scans from one gap before the running session (or from the manual Start) with one shared sessionizer.
+- [x] UI: Sessions tab "Session definition" panel (mode, turnover hour with the usual-start helper, idle hours, timezone with validation, live preview sentence, "Re-apply to stored history…" with a before/after confirm), per-row merge-with-previous and split-at-a-pause (the six longest pauses are offered; no typing of times), unscheduled row with move-into-session and discard, Start / End button in the header for manual mode, "Evening" becomes "Session" outside daily mode.
+- [x] **GM access control (David, 2026-09-19):** "Players see" select in the tracker header (whole table / own rolls / nothing) writes the `playerAccess` world setting; every client reacts at once: the scene-control button is re-evaluated (`ui.controls.render({ reset: true })`) and windows a player may no longer see are closed.
+- [x] `dev/e2e/verify-m5.mjs`: 16/16 on the dev instance with simulated January timestamps: overnight game one session in gap mode, two games on one date, one page per session, re-bucket to daily splits 4 + 3 and removes `~2`, real sessions untouched, back to gap restores the layout, idempotent, split then merge, manual Start/End with unscheduled before and after, moving unscheduled rolls, the access toggle live on a player client, and the final state identical to the initial one. The first run caught a real flaw: "previous session" was taken from key order, but a session split off or created later can carry a `~2` key and still have been played earlier; sessions are now ordered by first roll everywhere (`chronological`).
+- [x] Regression: `verify-m2.mjs` re-run on the 1.1 build.
+
+**Original design (kept for reference).**
 
 **Goal.** A table that plays an unusual slot must get correct sessions without fighting the module: overnight games, games that start before and end after the day boundary, two games in one day, a group in another timezone, a marathon. Crossing a calendar date (or the boundary hour) must never split one game in two, and the GM must be able to change the definition later and have stored history follow.
 

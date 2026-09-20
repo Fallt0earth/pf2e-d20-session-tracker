@@ -20,7 +20,8 @@ const reports = new Map();
 function openReport(sessionKey) {
   if (!canOpen()) return ui.notifications.warn(game.i18n.localize("PF2E-D20.Settings.PlayerAccess.None"));
   if (!store.loaded) store.load();
-  const key = sessionKey ?? store.listSessions().find((s) => s.n > 0)?.key ?? store.currentKey();
+  const key = sessionKey ?? store.currentKey() ?? store.listSessions().find((s) => s.n > 0 && !s.unscheduled)?.key;
+  if (!key) return ui.notifications.info(game.i18n.localize("PF2E-D20.Tonight.NoRolls"));
   let report = reports.get(key);
   if (!report) { report = new ReportApp({ source: store, sessionKey: key }); reports.set(key, report); }
   report.render({ force: true });
@@ -47,13 +48,29 @@ function registerHelpers() {
 
 const PARTIALS = ["partials/histogram.hbs", "partials/fun-group.hbs"].map((p) => `modules/${MODULE_ID}/templates/tracker/${p}`);
 
+/**
+ * A world setting changed (fires on every client). The GM's "Players see" control lands here: players
+ * gain or lose the scene-control button live, and windows they may no longer see are closed.
+ */
+function onSettingsChanged() {
+  if (!game.ready) return;
+  if (!canOpen()) {
+    app?.close();
+    for (const report of reports.values()) if (report.rendered) report.close();
+  } else {
+    app?.notify();
+    notifyReports(null);
+  }
+  try { ui.controls?.render({ reset: true }); } catch (e) { console.debug(`${MODULE_TITLE} | scene controls refresh skipped`, e); }
+}
+
 /** Open report popups follow the data like the main window does. */
 function notifyReports(key) {
   for (const [k, report] of reports) if (report.rendered && (!key || k === key)) report.render();
 }
 
 Hooks.once("init", () => {
-  registerSettings(() => app?.notify());
+  registerSettings(onSettingsChanged);
   registerHelpers();
   // Partials referenced by path inside PARTS templates must be pre-registered; the mixin only loads PARTS.
   foundry.applications.handlebars.loadTemplates(PARTIALS).catch((e) => console.error(`${MODULE_TITLE} | partials failed to load`, e));
@@ -88,6 +105,9 @@ Hooks.once("ready", async () => {
   const role = isWriter() ? "writer" : game.user.isGM ? "gm (not writer)" : "player";
   console.log(`${MODULE_TITLE} | ready on Foundry ${game.version}, ${game.system.id} ${game.system.version} — ${role}, ${store.sessions.size} evenings stored, capture ${getSetting(SETTINGS.captureEnabled) ? "on" : "paused"}`);
 
+  if (isWriter()) {
+    try { if (await store.autoCloseManual()) console.log(`${MODULE_TITLE} | closed a manual session that was left running`); } catch (e) { console.error(e); }
+  }
   if (isWriter() && getSetting(SETTINGS.captureEnabled)) {
     try {
       const r = await catchUp(store);

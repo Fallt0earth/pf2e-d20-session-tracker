@@ -1,8 +1,12 @@
 // Settings (docs/PLAN.md §4.8) and the keybinding. World settings are GM-only by Foundry's rules.
 import { MODULE_ID } from "./constants.js";
 import { DEFAULT_TIMEZONE, DEFAULT_BOUNDARY_HOUR } from "./sessions/bucket.js";
+import { DEFAULT_GAP_HOURS, normalizeConfig } from "./sessions/sessionizer.js";
 
 export const SETTINGS = Object.freeze({
+  sessionMode: "sessionMode",
+  sessionGapHours: "sessionGapHours",
+  manualSession: "manualSession",
   timezone: "timezone",
   boundaryHour: "boundaryHour",
   captureEnabled: "captureEnabled",
@@ -35,12 +39,27 @@ export function bucketOptions() {
   return { timezone: getSetting(SETTINGS.timezone), boundaryHour: getSetting(SETTINGS.boundaryHour) };
 }
 
+/** The world's session definition (docs/PLAN.md M5), including a running manual session if any. */
+export function sessionConfig() {
+  const manual = getSetting(SETTINGS.manualSession);
+  return normalizeConfig({
+    mode: getSetting(SETTINGS.sessionMode),
+    timezone: getSetting(SETTINGS.timezone),
+    boundaryHour: getSetting(SETTINGS.boundaryHour),
+    gapHours: getSetting(SETTINGS.sessionGapHours),
+    manualOpen: manual && manual.key ? manual : null,
+  });
+}
+
 export function registerSettings(onChange = () => {}) {
   const world = (key, data) => game.settings.register(MODULE_ID, key, { scope: "world", config: true, onChange, ...data });
   const client = (key, data) => game.settings.register(MODULE_ID, key, { scope: "client", config: false, onChange, ...data });
   const hidden = (key, data) => game.settings.register(MODULE_ID, key, { scope: "world", config: false, ...data });
   const L = (k) => `PF2E-D20.Settings.${k}`;
 
+  world(SETTINGS.sessionMode, { name: L("SessionMode.Name"), hint: L("SessionMode.Hint"), type: String, default: "daily", choices: { daily: L("SessionMode.Daily"), gap: L("SessionMode.Gap"), manual: L("SessionMode.Manual") } });
+  world(SETTINGS.sessionGapHours, { name: L("SessionGapHours.Name"), hint: L("SessionGapHours.Hint"), type: Number, default: DEFAULT_GAP_HOURS, range: { min: 1, max: 24, step: 0.5 } });
+  hidden(SETTINGS.manualSession, { type: Object, default: {}, onChange });
   world(SETTINGS.timezone, { name: L("Timezone.Name"), hint: L("Timezone.Hint"), type: String, default: DEFAULT_TIMEZONE });
   world(SETTINGS.boundaryHour, { name: L("BoundaryHour.Name"), hint: L("BoundaryHour.Hint"), type: Number, default: DEFAULT_BOUNDARY_HOUR, range: { min: 0, max: 23, step: 1 } });
   world(SETTINGS.captureEnabled, { name: L("CaptureEnabled.Name"), hint: L("CaptureEnabled.Hint"), type: Boolean, default: true });

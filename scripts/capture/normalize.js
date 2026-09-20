@@ -40,14 +40,15 @@ export function classifyMessage(msg) {
 }
 
 function makeBase(msg, ctx, ts) {
-  const sessionKey = ctx.sessionKeyFor(ts);
+  // The session key is resolved lazily, on the first record: in gap and manual modes asking for a key
+  // can open a session, and a message without any d20 must never do that.
+  let sessionKey;
   const speaker = msg.speaker ?? {};
   const whispered = Array.isArray(msg.whisper) && msg.whisper.length > 0;
   /** @type {Partial<import("../types.js").RollRecord>} */
   const defaults = {
     msgId: msg._id,
     ts,
-    sessionKey,
     userId: typeof msg.author === "string" ? msg.author : (msg.author?._id ?? msg.author?.id ?? msg.user ?? null),
     actorId: speaker.actor ?? null,
     tokenId: speaker.token ?? null,
@@ -72,5 +73,8 @@ function makeBase(msg, ctx, ts) {
     whispered,
     inCombat: ctx.inCombat ?? null,
   };
-  return (overrides) => /** @type {import("../types.js").RollRecord} */ ({ ...defaults, ...overrides });
+  return (overrides) => {
+    sessionKey ??= ctx.sessionKeyFor(ts);
+    return /** @type {import("../types.js").RollRecord} */ ({ ...defaults, sessionKey, ...overrides });
+  };
 }

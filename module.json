@@ -2,27 +2,61 @@
   "id": "pf2e-d20-session-tracker",
   "title": "PF2e d20 Session Tracker",
   "description": "Records every natural d20 per player and groups them by evening of play: who ran hot or cold tonight, in plain percentages with the statistics one click down, plus fun session aggregates and an evening report.",
-  "version": "1.0.0",
-  "compatibility": { "minimum": "13", "verified": "13.351", "maximum": "13" },
+  "version": "1.1.0",
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13.351",
+    "maximum": "13"
+  },
   "relationships": {
     "systems": [
-      { "id": "pf2e", "type": "system", "compatibility": { "minimum": "7.12.0" } }
+      {
+        "id": "pf2e",
+        "type": "system",
+        "compatibility": {
+          "minimum": "7.12.0"
+        }
+      }
     ]
   },
-  "esmodules": ["scripts/main.js"],
-  "styles": ["styles/tracker.css"],
-  "languages": [
-    { "lang": "en", "name": "English", "path": "languages/en.json" }
+  "esmodules": [
+    "scripts/main.js"
   ],
-  "authors": [{ "name": "David Stokes", "url": "https://github.com/Fallt0earth" }],
+  "styles": [
+    "styles/tracker.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "languages/en.json"
+    }
+  ],
+  "authors": [
+    {
+      "name": "David Stokes",
+      "url": "https://github.com/Fallt0earth"
+    }
+  ],
   "license": "LICENSE",
   "readme": "README.md",
   "changelog": "CHANGELOG.md",
   "flags": {
-    "hotReload": { "extensions": ["css", "hbs", "json"], "paths": ["styles", "templates", "languages"] }
+    "hotReload": {
+      "extensions": [
+        "css",
+        "hbs",
+        "json"
+      ],
+      "paths": [
+        "styles",
+        "templates",
+        "languages"
+      ]
+    }
   },
   "url": "https://github.com/Fallt0earth/pf2e-d20-session-tracker",
   "bugs": "https://github.com/Fallt0earth/pf2e-d20-session-tracker/issues",
   "manifest": "https://github.com/Fallt0earth/pf2e-d20-session-tracker/releases/latest/download/module.json",
-  "download": "https://github.com/Fallt0earth/pf2e-d20-session-tracker/releases/download/v1.0.0/module.zip"
+  "download": "https://github.com/Fallt0earth/pf2e-d20-session-tracker/releases/download/v1.1.0/module.zip"
 }

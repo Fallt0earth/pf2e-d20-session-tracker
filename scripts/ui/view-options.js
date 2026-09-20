@@ -3,7 +3,7 @@
 import { getSetting, SETTINGS } from "../settings.js";
 
 /**
- * @param {{ currentKey(): string }} source
+ * @param {{ currentKey(): string|null }} source
  * @param {object} [overrides]  Client-side toggles to override (groupBy, countMode, includeGM, includeRaw).
  */
 export function viewOptionsFor(source, overrides = {}) {

@@ -12,8 +12,12 @@ Luck is the natural die only. Totals and outcomes mix in modifiers and DCs, so t
 
 ## How it works
 - The **active GM client** is the single writer. It normalises every d20-bearing chat message (checks, saves, attacks, initiative, flat checks, raw `/r 1d20`, both dice of fortune/misfortune, both dice of a hero-point reroll) into one record per physical die and stores them in a hidden journal, one page per evening.
-- An **evening** is bucketed by the message timestamp in the world timezone with a boundary hour (default 06:00 America/Chicago), so a game running past midnight stays one session. No start/stop button.
-- Players read the same journal; the window filters blind and secret rolls out of their view for the current evening (configurable).
+- A **session** is whatever your table needs it to be (Sessions tab → Session definition):
+  - *By day* (default): one session per day in the world timezone with a turnover hour (default 06:00 America/Chicago), so a game running past midnight stays one session. A preview sentence shows what the current values mean, and "we usually start at" sets the turnover for you.
+  - *By pause*: a new session starts only after a number of idle hours (default 5). Works for any timeslot, overnight games, date changes and two games in one day.
+  - *Start / End buttons*: the GM marks sessions by hand; stray rolls are kept aside as unscheduled.
+  - Changed your mind? *Re-apply to stored history* regroups every stored roll (each keeps its raw timestamp), after showing what would move. Merge and split tools cover the odd case.
+- Players read the same journal; the window filters blind and secret rolls out of their view for the running session (configurable). The GM decides what players may open with the **Players see** control in the tracker header: the whole table, only their own rolls, or nothing. It takes effect at once on every client, no reload.
 - If the GM reloads or the server restarts mid-evening, a catch-up scans tonight's chat for anything missed. Deleting the chat log does not affect stored evenings.
 
 ## Install
@@ -28,11 +32,11 @@ Open the window from the token controls (d20 icon), a keybinding you assign, or 
 - **Tonight:** party headline and the leaderboard (n, mean, luck z, percentile, Nat 20 and Nat 1 vs expected). Expand a row for the 1–20 histogram.
 - **Fun:** awards, streaks with times, degree-of-success bar, hero-point and fortune returns, clutch / heartbreaker / wasted-20 moments, chi-square shape test.
 - **History:** all-time rank, best and worst evening, a z trend per player.
-- **Sessions:** rename, exclude, export CSV/JSON, catch-up, pause capture, reset (GM).
+- **Sessions:** session definition with preview, re-apply to history, merge, split, rename, exclude, export CSV/JSON, catch-up, reset (GM).
 - The scroll icon opens the **evening report** in its own popup, on your screen only. Nothing is posted to chat. A GM can choose "Post a link in chat" inside the popup, which adds a single line with an Open button; the report itself never enters the chat log. `api.openReport(key)` does the same from a macro.
 
 ## Settings (GM)
-Timezone and boundary hour; capture on/off (pause while prepping); count raw d20 rolls; minimum dice to list an evening; player access (whole table / own rolls / GM only); blind-roll policy for player views; Monte Carlo iterations.
+Session definition (by day / by pause / Start–End), idle hours, timezone and turnover hour; capture on/off (pause while prepping); count raw d20 rolls; minimum dice to list an evening; player access (whole table / own rolls / GM only); blind-roll policy for player views; Monte Carlo iterations.
 
 ## Privacy note
 Blind and secret roll results are stored in a GM-only journal and filtered out of the player-facing view. Like blind chat messages themselves, they are technically readable through the browser console by anyone with a client; the filter is a UI guarantee, not a cryptographic one.

@@ -1,8 +1,7 @@
 // GM-only live capture (decision D2a): the active GM client normalizes every new or updated chat
 // message and appends the records to the store. Other clients do nothing here (see roller-enrich.js).
 import { messageToRollRecords } from "./normalize.js";
-import { sessionKeyFor } from "../sessions/bucket.js";
-import { bucketOptions, getSetting, SETTINGS } from "../settings.js";
+import { getSetting, SETTINGS } from "../settings.js";
 
 const CLOCK_SKEW_MS = 15 * 60 * 1000;
 
@@ -11,10 +10,17 @@ export function isWriter() {
   return !!gm && gm.id === game.user.id;
 }
 
-export function captureContext(event, updaterUserId, store) {
-  const opts = bucketOptions();
+/**
+ * Normalizer context. `assign` decides the session of a timestamp: live capture peeks at the store
+ * (the span grows when the records are appended); batches pass one shared Sessionizer's `assign`.
+ * @param {"create"|"update"|"backfill"} event
+ * @param {string|null} updaterUserId
+ * @param {import("../storage/store.js").JournalStore} store
+ * @param {(ts: number) => string} [assign]
+ */
+export function captureContext(event, updaterUserId, store, assign) {
   return {
-    sessionKeyFor: (ts) => sessionKeyFor(ts, opts),
+    sessionKeyFor: assign ?? ((ts) => store.assignKey(ts)),
     event,
     updaterUserId: updaterUserId ?? null,
     inCombat: event === "backfill" ? null : !!game.combat?.active,
@@ -39,8 +45,9 @@ export function registerLiveCapture(store) {
     const data = message.toObject();
     if (event === "create" && !warnedSkew && Math.abs(Date.now() - data.timestamp) > CLOCK_SKEW_MS) {
       warnedSkew = true;
-      console.warn(`d20 tracker | message ${message.id} timestamp differs from this clock by ${Math.round((Date.now() - data.timestamp) / 60000)} min — check the rolling client's clock; evening bucketing uses message.timestamp`);
+      console.warn(`d20 tracker | message ${message.id} timestamp differs from this clock by ${Math.round((Date.now() - data.timestamp) / 60000)} min — check the rolling client's clock; sessions are assigned from message.timestamp`);
     }
+    await store.autoCloseManual(); // a forgotten manual End closes itself before this roll is placed
     const records = messageToRollRecords(data, captureContext(event, userId, store));
     if (records.length) await store.append(records);
   };

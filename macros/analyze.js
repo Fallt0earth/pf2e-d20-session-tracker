@@ -496,13 +496,12 @@
     return null;
   }
   function makeBase(msg, ctx, ts) {
-    const sessionKey = ctx.sessionKeyFor(ts);
+    let sessionKey;
     const speaker = msg.speaker ?? {};
     const whispered = Array.isArray(msg.whisper) && msg.whisper.length > 0;
     const defaults = {
       msgId: msg._id,
       ts,
-      sessionKey,
       userId: typeof msg.author === "string" ? msg.author : msg.author?._id ?? msg.author?.id ?? msg.user ?? null,
       actorId: speaker.actor ?? null,
       tokenId: speaker.token ?? null,
@@ -527,15 +526,19 @@
       whispered,
       inCombat: ctx.inCombat ?? null
     };
-    return (overrides) => (
-      /** @type {import("../types.js").RollRecord} */
-      { ...defaults, ...overrides }
-    );
+    return (overrides) => {
+      sessionKey ??= ctx.sessionKeyFor(ts);
+      return (
+        /** @type {import("../types.js").RollRecord} */
+        { ...defaults, sessionKey, ...overrides }
+      );
+    };
   }
 
   // scripts/sessions/bucket.js
   var DEFAULT_TIMEZONE = "America/Chicago";
   var DEFAULT_BOUNDARY_HOUR = 6;
+  var UNSCHEDULED = "unscheduled";
   var DAY_MS = 864e5;
   var formatters = /* @__PURE__ */ new Map();
   function formatterFor(timezone) {
@@ -568,13 +571,25 @@
     if (w.hour < boundaryHour) dayUtc -= DAY_MS;
     return isoDate(dayUtc);
   }
+  function parseKey(key) {
+    const [base, seq] = String(key).split("~");
+    return { base, seq: seq ? Number(seq) : 1 };
+  }
   function sessionLabel(key, locale = "en-US") {
-    const [y, m, d] = key.split("-").map(Number);
+    if (key === UNSCHEDULED) return "Unscheduled";
+    const { base, seq } = parseKey(key);
+    const [y, m, d] = base.split("-").map(Number);
+    if (!y || !m || !d) return String(key);
     const weekday = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(Date.UTC(y, m - 1, d));
-    return `${key} ${weekday}`;
+    return `${base} ${weekday}${seq > 1 ? ` (${seq})` : ""}`;
   }
   function compareKeys(a, b) {
-    return a < b ? -1 : a > b ? 1 : 0;
+    if (a === b) return 0;
+    if (a === UNSCHEDULED) return -1;
+    if (b === UNSCHEDULED) return 1;
+    const pa = parseKey(a), pb = parseKey(b);
+    if (pa.base !== pb.base) return pa.base < pb.base ? -1 : 1;
+    return pa.seq - pb.seq;
   }
   function isoDate(utcMs) {
     return new Date(utcMs).toISOString().slice(0, 10);
