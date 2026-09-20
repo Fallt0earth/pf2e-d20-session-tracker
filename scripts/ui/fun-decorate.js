@@ -1,4 +1,6 @@
 // Foundry-side decoration of the fun model into template-ready lines (i18n, time formatting).
+import { luckPercent } from "./tonight-decorate.js";
+
 const L = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 const time = (ts) => (ts ? new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "");
 const fmt = (v, d = 2) => (v === null || v === undefined || !Number.isFinite(v) ? "–" : Number(v).toFixed(d));
@@ -21,7 +23,9 @@ function faceLine(f) {
   if (!f) return "–";
   const excess = f.count >= f.expected;
   const p = excess ? f.pAtLeast : f.pAtMost;
-  return `${f.count} vs ${fmt(f.expected, 1)} (${L(excess ? "PF2E-D20.Fun.PAtLeast" : "PF2E-D20.Fun.PAtMost", { p: fmt(p, 2) })})`;
+  const chance = p === null || p === undefined ? "–" : p < 0.01 ? "<1%" : `${Math.round(p * 100)}%`;
+  const rate = f.rate === null || f.rate === undefined ? "" : ` · ${(f.rate * 100).toFixed(1)}%`;
+  return `${f.count}${rate} (${L(excess ? "PF2E-D20.Fun.PAtLeast" : "PF2E-D20.Fun.PAtMost", { p: chance })})`;
 }
 
 function describeRecord(r) {
@@ -56,7 +60,10 @@ export function decorateFunGroup(g) {
     pips: int(g.basic?.sum), pipsRarity: mc.pips ? (mc.pips.percentile >= 0.5 ? rarity(mc.pips, { high: true }) : rarity(mc.pips, { high: false })) : "",
     pipsPercentile: mc.pips ? Math.round(mc.pips.percentile * 100) : null, pipsMedian: mc.pips ? int(mc.pips.median) : null,
     mean: fmt(g.basic?.mean), median: fmt(g.basic?.median, 1), modes: (g.basic?.modes ?? []).join(", "), sd: fmt(g.basic?.sd), min: g.basic?.min ?? "–", max: g.basic?.max ?? "–",
-    z: fmt(g.luck.z), pctile: g.luck.percentile === null ? "–" : `${Math.round(g.luck.percentile * 100)}%`,
+    z: g.luck.zGuard === "none" ? "–" : `${g.luck.z > 0 ? "+" : ""}${fmt(g.luck.z)}`,
+    luckPct: luckPercent(g.luck),
+    luckTitle: g.luck.zGuard === "none" ? L("PF2E-D20.Tonight.NoSample") : L("PF2E-D20.Tonight.LuckTitle", { pct: luckPercent(g.luck), z: `${g.luck.z > 0 ? "+" : ""}${fmt(g.luck.z)}` }),
+    highPct: g.luck.high?.share === null || g.luck.high?.share === undefined ? "–" : `${Math.round(g.luck.high.share * 100)}%`,
     nat20: g.luck.nat20, nat1: g.luck.nat1,
     nat20Line: faceLine(g.luck.nat20),
     nat1Line: faceLine(g.luck.nat1),
@@ -77,7 +84,7 @@ export function decorateFunGroup(g) {
 export function decorateAwards(list, groupsById) {
   return list.map((a) => {
     const g = groupsById.get(a.groupId);
-    const data = { who: a.label, value: a.value, n: g?.n ?? "", z: g ? fmt(g.luck.z) : "", sd: g ? fmt(g.basic?.sd) : "", count: a.key === "snakeEyes" ? g?.luck.nat1.count : a.key === "golden" ? g?.luck.nat20.count : "", band: g ? L(`PF2E-D20.Band.${g.band}`) : "" };
+    const data = { who: a.label, value: a.value, n: g?.n ?? "", z: g ? fmt(g.luck.z) : "", pct: g ? (luckPercent(g.luck) ?? "–") : "", sd: g ? fmt(g.basic?.sd) : "", count: a.key === "snakeEyes" ? g?.luck.nat1.count : a.key === "golden" ? g?.luck.nat20.count : "", band: g ? L(`PF2E-D20.Band.${g.band}`) : "" };
     return { key: a.key, title: L(`PF2E-D20.Awards.${a.key}.Title`), text: L(`PF2E-D20.Awards.${a.key}.Text`, data), ties: a.ties };
   });
 }

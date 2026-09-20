@@ -3,7 +3,7 @@
 A Foundry VTT v13 module for the Pathfinder Second Edition system. It records every natural d20 each player rolls, groups the rolls by evening of play, and shows who ran hot or cold tonight with honest statistics, plus fun session aggregates: full 1–20 result tables, streaks, degree-of-success splits, hero-point reroll returns, awards, and a chat summary card.
 
 ## What it measures
-Luck is the natural die only. Totals and outcomes mix in modifiers and DCs, so they are not luck. Everything is compared with a fair d20 (mean 10.5): the leaderboard number is a z-score that normalises for how many dice each player rolled, greyed out below 15 dice. "One in N nights" labels come from simulated fair evenings with the same number of dice. The module measures the dice, not the players.
+Luck is the natural die only. Totals and outcomes mix in modifiers and DCs, so they are not luck. Everything is compared with a fair d20, and the first thing you see is plain: a **luck percentage** ("luckier than 86% of evenings with this many rolls"; 50% is dead average), the **average roll** against the fair 10.5, the **share of high rolls** (11 or more; fair is 50%) and **Nat 20 / Nat 1 counts with their rate** (fair is 5%). The statistics behind the percentage (z-score, exact percentile, tail probabilities) are one click down, in the expanded row and in tooltips. Below 15 rolls the luck figure is greyed; below 5 it is not shown. "One in N nights" labels come from simulated fair evenings with the same number of rolls. The module measures the dice, not the players.
 
 ## Requirements
 - Foundry VTT 13.351 (v13 line), PF2e system 7.12.x
@@ -25,7 +25,7 @@ Open the window from the token controls (d20 icon), a keybinding you assign, or 
 - **Fun:** awards, streaks with times, degree-of-success bar, hero-point and fortune returns, clutch / heartbreaker / wasted-20 moments, chi-square shape test.
 - **History:** all-time rank, best and worst evening, a z trend per player.
 - **Sessions:** rename, exclude, export CSV/JSON, catch-up, pause capture, reset (GM).
-- The scroll icon (GM) posts the evening's summary card to chat, to everyone or to GMs only.
+- The scroll icon opens the **evening report** in its own popup, on your screen only. Nothing is posted to chat. A GM can choose "Post a link in chat" inside the popup, which adds a single line with an Open button; the report itself never enters the chat log. `api.openReport(key)` does the same from a macro.
 
 ## Settings (GM)
 Timezone and boundary hour; capture on/off (pause while prepping); count raw d20 rolls; minimum dice to list an evening; player access (whole table / own rolls / GM only); blind-roll policy for player views; Monte Carlo iterations.

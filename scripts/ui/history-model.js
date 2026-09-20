@@ -25,7 +25,7 @@ export function buildHistoryModel(sessions, opts) {
       const nats = g.records.map((r) => r.natural);
       groups.get(g.id).sessions.push({ key: s.key, naturals: nats });
       const l = luckSummary(nats);
-      row.cells[g.id] = { n: l.n, z: l.z, mean: l.mean, zGuard: l.zGuard, band: zBand(l.zGuard === "none" ? null : l.z) };
+      row.cells[g.id] = { n: l.n, z: l.z, percentile: l.percentile, mean: l.mean, zGuard: l.zGuard, band: zBand(l.zGuard === "none" ? null : l.z) };
     }
     rows.push(row);
     partySessions.push({ key: s.key, naturals });

@@ -7,11 +7,25 @@ import { registerLiveCapture, isWriter } from "./capture/live.js";
 import { registerRollerEnrichment } from "./capture/roller-enrich.js";
 import { catchUp } from "./backfill/catchup.js";
 import { TrackerApp } from "./ui/tracker-app.js";
+import { ReportApp } from "./ui/report-app.js";
+import { registerReportLinks } from "./ui/report-link.js";
 import { registerEntryPoints, canOpen } from "./ui/entry.js";
 import { buildApi } from "./api.js";
 
 let store = null;
 let app = null;
+const reports = new Map();
+
+/** The evening report popup: opens only on an explicit click (button, chat link, or this API). */
+function openReport(sessionKey) {
+  if (!canOpen()) return ui.notifications.warn(game.i18n.localize("PF2E-D20.Settings.PlayerAccess.None"));
+  if (!store.loaded) store.load();
+  const key = sessionKey ?? store.listSessions().find((s) => s.n > 0)?.key ?? store.currentKey();
+  let report = reports.get(key);
+  if (!report) { report = new ReportApp({ source: store, sessionKey: key }); reports.set(key, report); }
+  report.render({ force: true });
+  return report;
+}
 
 function open() {
   if (!canOpen()) return ui.notifications.warn(game.i18n.localize("PF2E-D20.Settings.PlayerAccess.None"));
@@ -33,6 +47,11 @@ function registerHelpers() {
 
 const PARTIALS = ["partials/histogram.hbs", "partials/fun-group.hbs"].map((p) => `modules/${MODULE_ID}/templates/tracker/${p}`);
 
+/** Open report popups follow the data like the main window does. */
+function notifyReports(key) {
+  for (const [k, report] of reports) if (report.rendered && (!key || k === key)) report.render();
+}
+
 Hooks.once("init", () => {
   registerSettings(() => app?.notify());
   registerHelpers();
@@ -40,8 +59,10 @@ Hooks.once("init", () => {
   foundry.applications.handlebars.loadTemplates(PARTIALS).catch((e) => console.error(`${MODULE_TITLE} | partials failed to load`, e));
   registerEntryPoints(open);
   registerRollerEnrichment();
+  registerReportLinks(openReport);
   game.modules.get(MODULE_ID).api = buildApi({
     open,
+    openReport,
     close: () => app?.close(),
     getSource: () => store,
     catchUp: (opts) => catchUp(store, opts),
@@ -51,7 +72,7 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", async () => {
   store = new JournalStore().load();
-  store.onChange((key) => app?.notify(key));
+  store.onChange((key) => { app?.notify(key); notifyReports(key); });
 
   // Every client mirrors journal changes (players never write; the GM sees other GMs' writes).
   Hooks.on("updateJournalEntryPage", (page) => store.reloadPage(page));

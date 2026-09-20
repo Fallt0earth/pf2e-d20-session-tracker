@@ -65,6 +65,18 @@ test("luck: a perfectly average set has z 0; a hot set scores high", () => {
   assert.ok(hot.nat20.pAtLeast < 0.05);
 });
 
+test("luck: human-readable layer — high-roll share and face rates", () => {
+  const s = luckSummary([1, 5, 10, 11, 15, 20, 20, 3, 12, 19]);
+  assert.equal(s.high.count, 6);
+  close(s.high.share, 0.6, 1e-12);
+  assert.equal(s.high.expected, 0.5);
+  close(s.nat20.rate, 0.2, 1e-12);
+  close(s.nat1.rate, 0.1, 1e-12);
+  const empty = luckSummary([]);
+  assert.equal(empty.high.share, null);
+  assert.equal(empty.nat20.rate, null);
+});
+
 test("luck: sample-size guards", () => {
   assert.equal(luckSummary([]).zGuard, "none");
   assert.equal(luckSummary([1, 2, 3]).zGuard, "none");

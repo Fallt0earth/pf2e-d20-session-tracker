@@ -6,9 +6,11 @@ import { buildSessionModel } from "./ui/view-model.js";
 import { viewOptionsFor } from "./ui/view-options.js";
 import { bucketOptions } from "./settings.js";
 
-export function buildApi({ open, close, getSource, catchUp }) {
+export function buildApi({ open, openReport, close, getSource, catchUp }) {
   return Object.freeze({
     open,
+    /** Open the evening report popup on this client (never posts to chat). */
+    openReport,
     close,
     /** The journal store (read on every client, written by the active GM). */
     get store() { return getSource(); },

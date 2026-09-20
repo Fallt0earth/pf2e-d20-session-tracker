@@ -3,11 +3,12 @@
     <span class="name"><b>{{g.label}}</b>{{#if g.subtitle}} <small>{{g.subtitle}}</small>{{/if}}</span>
     <span class="stat"><b>{{g.n}}</b> {{localize "PF2E-D20.Tonight.Dice"}}</span>
     <span class="stat">{{localize "PF2E-D20.Fun.Pips"}} <b>{{g.pips}}</b>{{#if g.pipsMedian}} <small>({{localize "PF2E-D20.Fun.FairMedian" median=g.pipsMedian}}, {{g.pipsRarity}})</small>{{/if}}</span>
-    <span class="stat">{{localize "PF2E-D20.Tonight.Z"}} <b>{{g.z}}</b> <em>{{g.bandLabel}}</em>{{#if g.thin}} <small>*</small>{{/if}}</span>
+    <span class="stat" title="{{g.luckTitle}}">{{localize "PF2E-D20.Tonight.Luck"}} <b>{{#if g.luckPct}}{{g.luckPct}}%{{else}}–{{/if}}</b> <em>{{g.bandLabel}}</em>{{#if g.thin}} <small>*</small>{{/if}}</span>
   </div>
   <div class="fun-grid">
     <div class="fun-col">
       {{> "modules/pf2e-d20-session-tracker/templates/tracker/partials/histogram.hbs" bars=g.histBars}}
+      <div class="kv"><span>{{localize "PF2E-D20.Tonight.High"}}</span><b>{{g.highPct}}</b></div>
       <div class="kv"><span>{{localize "PF2E-D20.Fun.MeanMedianMode"}}</span><b>{{g.mean}} / {{g.median}} / {{g.modes}}</b></div>
       <div class="kv"><span>{{localize "PF2E-D20.Fun.Spread"}}</span><b>{{g.sd}}</b> <small>({{g.min}}–{{g.max}})</small></div>
       <div class="kv"><span>{{localize "PF2E-D20.Fun.MostLeast"}}</span><b>{{g.most}}</b> / {{g.least}}</div>
@@ -15,6 +16,7 @@
       <div class="kv"><span>{{localize "PF2E-D20.Tonight.Nat20"}}</span><b>{{g.nat20Line}}</b>{{#if g.nat20When}} <small>{{g.nat20When}}</small>{{/if}}</div>
       <div class="kv"><span>{{localize "PF2E-D20.Tonight.Nat1"}}</span><b>{{g.nat1Line}}</b></div>
       <div class="kv"><span>{{localize "PF2E-D20.Fun.Shape"}}</span><small>{{g.chisq}}</small></div>
+      <div class="kv"><span>{{localize "PF2E-D20.Details.ZScore"}}</span><small>{{g.z}}</small></div>
     </div>
     <div class="fun-col">
       {{#if g.dos}}

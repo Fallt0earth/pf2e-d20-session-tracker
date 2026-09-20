@@ -107,16 +107,37 @@
 .pf2e-d20-tracker .spark span.neg { background: var(--d20-cold); }
 .pf2e-d20-tracker .spark span.zero { height: 2px !important; }
 
-/* Chat summary card */
-.pf2e-d20-summary h3 { margin: 0 0 0.25rem; font-size: 1.05em; }
-.pf2e-d20-summary .mood { margin: 0 0 0.35rem; }
-.pf2e-d20-summary table { width: 100%; border-collapse: collapse; font-size: 0.92em; }
-.pf2e-d20-summary th, .pf2e-d20-summary td { text-align: right; padding: 0.1rem 0.3rem; border-bottom: 1px solid rgba(128, 128, 128, 0.3); }
-.pf2e-d20-summary th:first-child, .pf2e-d20-summary td:first-child { text-align: left; }
-.pf2e-d20-summary tr.band-blessed td:first-child { color: #c7a020; font-weight: 700; }
-.pf2e-d20-summary tr.band-cursed td:first-child { color: #7c3aed; font-weight: 700; }
-.pf2e-d20-summary ul.awards { margin: 0.35rem 0 0; padding-left: 1.1rem; font-size: 0.92em; }
-.pf2e-d20-summary .foot { margin: 0.35rem 0 0; font-size: 0.8em; opacity: 0.75; }
+/* Luck meter: a track with a centre tick at 50%; the fill grows from the centre toward the value. */
+.pf2e-d20-tracker .luck-meter { position: relative; display: inline-block; width: 5.5rem; height: 8px; border-radius: 4px; background: var(--d20-bg-soft); vertical-align: middle; margin-right: 0.35rem; overflow: hidden; }
+.pf2e-d20-tracker .luck-meter.wide { display: block; width: 100%; height: 10px; margin: 0.35rem 0 0; }
+.pf2e-d20-tracker .luck-meter .fill { position: absolute; top: 0; bottom: 0; border-radius: 2px; }
+.pf2e-d20-tracker .luck-meter .fill.hot { background: var(--d20-hot); }
+.pf2e-d20-tracker .luck-meter .fill.cold { background: var(--d20-cold); }
+.pf2e-d20-tracker .luck-meter .tick { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 1px; background: currentColor; opacity: 0.6; }
+.pf2e-d20-tracker th.luck-col, .pf2e-d20-tracker td.luck-col { text-align: left; white-space: nowrap; min-width: 11rem; }
+.pf2e-d20-tracker td.luck-col em { font-style: normal; font-size: var(--font-size-11, 11px); margin-left: 0.2rem; color: var(--d20-muted); }
+.pf2e-d20-tracker tr.band-hot td.luck-col em { color: var(--d20-hot); }
+.pf2e-d20-tracker tr.band-cold td.luck-col em { color: var(--d20-cold); }
+.pf2e-d20-tracker tr.band-blessed td.luck-col em { color: var(--d20-blessed); font-weight: 700; }
+.pf2e-d20-tracker tr.band-cursed td.luck-col em { color: var(--d20-cursed); font-weight: 700; }
+.pf2e-d20-tracker tr.thin td.luck-col .luck-pct { color: var(--d20-muted); font-weight: 400; }
+.pf2e-d20-tracker table td small { color: var(--d20-muted); font-size: var(--font-size-11, 11px); }
+.pf2e-d20-tracker .party-sentence { margin: 0 0 0.25rem; font-size: var(--font-size-14, 14px); }
+.pf2e-d20-tracker .meter-wrap { display: inline-flex; align-items: center; }
+.pf2e-d20-tracker .detail-numbers { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; margin: 0.25rem 0; font-size: var(--font-size-12, 12px); }
+.pf2e-d20-tracker .kvchip small { color: var(--d20-muted); }
+
+/* Report popup */
+.pf2e-d20-report .window-content { display: block; overflow: auto; }
+.pf2e-d20-report .report-body { display: flex; flex-direction: column; gap: 0.5rem; }
+.pf2e-d20-report .box-title { margin-top: 0.25rem; }
+.pf2e-d20-report .report-foot { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-top: 0.25rem; }
+.pf2e-d20-report .report-foot small { margin-left: auto; color: var(--d20-muted); }
+
+/* The optional one-line chat link to the report */
+.pf2e-d20-report-link { display: flex; align-items: center; gap: 0.4rem; }
+.pf2e-d20-report-link span { flex: 1; }
+.pf2e-d20-report-link button { width: auto; flex: 0 0 auto; line-height: 1.6; padding: 0 0.6rem; }
 
 .pf2e-d20-tracker .sessions-toolbar { display: flex; gap: 0.25rem; align-items: center; margin-bottom: 0.25rem; }
 .pf2e-d20-tracker .sessions-toolbar .spacer { flex: 1; }

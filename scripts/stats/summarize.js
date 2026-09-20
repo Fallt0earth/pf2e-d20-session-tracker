@@ -55,7 +55,7 @@ export function campaignTrend(sessions) {
   const points = sessions.map((s) => {
     const l = luckSummary(s.naturals);
     cumN += l.n; cumSum += s.naturals.reduce((a, b) => a + b, 0);
-    return { key: s.key, n: l.n, z: l.z, mean: l.mean, zGuard: l.zGuard, cumulativeDelta: cumN ? cumSum / cumN - 10.5 : null };
+    return { key: s.key, n: l.n, z: l.z, percentile: l.percentile, mean: l.mean, zGuard: l.zGuard, cumulativeDelta: cumN ? cumSum / cumN - 10.5 : null };
   });
   const all = sessions.flatMap((s) => s.naturals);
   const allTime = luckSummary(all);

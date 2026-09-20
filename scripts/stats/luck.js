@@ -20,25 +20,29 @@ export function luckSummary(naturals, guards = DEFAULT_GUARDS) {
   const minN = guards.minN ?? DEFAULT_GUARDS.minN;
   const thinN = guards.thinN ?? DEFAULT_GUARDS.thinN;
   if (n === 0) {
-    return { n: 0, mean: null, delta: null, z: null, percentile: null, zGuard: "none", nat20: faceStats(0, 0), nat1: faceStats(0, 0) };
+    return { n: 0, mean: null, delta: null, z: null, percentile: null, zGuard: "none", high: { count: 0, share: null, expected: 0.5 }, nat20: faceStats(0, 0), nat1: faceStats(0, 0) };
   }
   const mean = xs.reduce((s, v) => s + v, 0) / n;
   const delta = mean - D20.mean;
   const z = delta / (D20.sd / Math.sqrt(n));
   const zGuard = n < minN ? "none" : n < thinN ? "thin" : "ok";
+  const highCount = xs.filter((v) => v >= 11).length;
   return {
     n, mean, delta, z, percentile: normalCdf(z), zGuard,
+    // The human-readable layer: share of "high" rolls (11–20; a fair die gives 50%).
+    high: { count: highCount, share: highCount / n, expected: 0.5 },
     nat20: faceStats(n, xs.filter((v) => v === 20).length),
     nat1: faceStats(n, xs.filter((v) => v === 1).length),
   };
 }
 
-/** Observed vs expected count of one face, with both one-sided binomial tails. */
+/** Observed vs expected count of one face (rate against the fair 5%), with both one-sided binomial tails. */
 export function faceStats(n, count) {
   const p = 1 / 20;
   return {
     count,
     expected: n * p,
+    rate: n ? count / n : null,
     pAtLeast: n ? binomialAtLeast(n, count, p) : null, // excess
     pAtMost: n ? binomialAtMost(n, count, p) : null,   // drought
   };

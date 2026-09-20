@@ -32,7 +32,9 @@ instance at http://your-docker-host:30000 through the headless harness (`foundry
 | + | GM reload mid-evening | close and reopen the GM session | records persist; catch-up adds nothing | PASS 2026-09-15 (`verify-m2`: 108 = 108) | — |
 | + | Journal write size | 108 records of one evening | compact page | 30 046 bytes ≈ 278 B/record (`verify-m2`) | — |
 | + | Fun tab compute time | open the Fun tab on a 110-dice evening, K = 10 000 | under 1 s | 57 ms (2026-09-15, GM client) | — |
-| + | Summary chat card | header button → Everyone | card with mood, leaderboard, awards; no records extracted from it | PASS 2026-09-15 (screenshot; normalizer yields 0 records) | — |
+| + | Report popup (replaces the chat card) | scroll button / `api.openReport()` | own window on the clicker's client; **0 chat messages** from opening; plain-language party sentence, leaderboard, awards, highlights | PASS 2026-09-19 (screenshot; message count unchanged) | — |
+| + | Optional report link | GM presses "Post a link in chat" in the popup | one line with an Open button; clicking opens the popup; no records extracted | PASS 2026-09-19 (48 chars, button wired, normalizer yields 0 records) | — |
+| + | Human-readable first layer | Tonight tab, one row expanded | rolls, average (±), high-roll %, Nat 20/1 count · rate, luck % with meter and band; z-score and tails only in the expanded details | PASS 2026-09-19 (screenshot) | — |
 | + | History tab | open on one recorded evening | all-time card, rank rows, evening grid, sparkline | PASS 2026-09-15 (screenshot) | — |
 | + | CSV export | `exportRecords(store, key, "csv")` | header + one row per visible die, download triggered | PASS 2026-09-15 (112 rows, `d20-2026-09-15.csv`) | — |
 | + | Journal page text | any write | readable per-player table in the hidden page | PASS 2026-09-15 (532 chars) | — |

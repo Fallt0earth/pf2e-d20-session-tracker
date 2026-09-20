@@ -6,42 +6,52 @@
       <div class="party band-{{history.party.band}}">
         <div class="party-title">{{localize "PF2E-D20.History.AllTime"}} — {{history.party.evenings}} {{localize "PF2E-D20.History.Evenings"}}</div>
         <div class="party-stats">
-          <span><b>{{history.party.allTime.n}}</b> {{localize "PF2E-D20.Tonight.Dice"}}</span>
-          <span>{{localize "PF2E-D20.Tonight.Mean"}} <b>{{d20fixed history.party.allTime.mean 2}}</b></span>
-          <span>{{localize "PF2E-D20.Tonight.Z"}} <b>{{d20signed history.party.allTime.z 2}}</b> <em>{{history.party.bandLabel}}</em></span>
-          {{#if history.party.best}}<span>{{localize "PF2E-D20.History.Best"}} <b>{{history.party.best.key}}</b> ({{d20signed history.party.best.z 2}})</span>{{/if}}
-          {{#if history.party.worst}}<span>{{localize "PF2E-D20.History.Worst"}} <b>{{history.party.worst.key}}</b> ({{d20signed history.party.worst.z 2}})</span>{{/if}}
+          <span><b>{{history.party.allTime.n}}</b> {{localize "PF2E-D20.Tonight.Rolls"}}</span>
+          <span>{{localize "PF2E-D20.Tonight.Average"}} <b>{{d20fixed history.party.allTime.mean 1}}</b></span>
+          <span title="{{history.party.luckTitle}}">{{localize "PF2E-D20.Tonight.Luck"}} <b>{{#if history.party.luckPct}}{{history.party.luckPct}}%{{else}}–{{/if}}</b> <em>{{history.party.bandLabel}}</em></span>
+          {{#if history.party.best}}<span>{{localize "PF2E-D20.History.Best"}} <b>{{history.party.best.key}}</b> ({{history.party.bestPct}}%)</span>{{/if}}
+          {{#if history.party.worst}}<span>{{localize "PF2E-D20.History.Worst"}} <b>{{history.party.worst.key}}</b> ({{history.party.worstPct}}%)</span>{{/if}}
         </div>
       </div>
 
       <table class="leaderboard history-rank">
-        <thead><tr><th class="who">{{localize "PF2E-D20.History.Rank"}}</th><th>{{localize "PF2E-D20.History.Evenings"}}</th><th>n</th><th>{{localize "PF2E-D20.Tonight.Mean"}}</th><th>{{localize "PF2E-D20.Tonight.Z"}}</th><th>{{localize "PF2E-D20.History.Nat20Rate"}}</th><th>{{localize "PF2E-D20.History.Best"}}</th><th>{{localize "PF2E-D20.History.Worst"}}</th><th class="spark-col">{{localize "PF2E-D20.History.Trend"}}</th></tr></thead>
+        <thead><tr>
+          <th class="who">{{localize "PF2E-D20.History.Rank"}}</th>
+          <th>{{localize "PF2E-D20.History.Evenings"}}</th>
+          <th>{{localize "PF2E-D20.Tonight.Rolls"}}</th>
+          <th>{{localize "PF2E-D20.Tonight.Average"}}</th>
+          <th title="{{localize "PF2E-D20.Tonight.LuckHint"}}">{{localize "PF2E-D20.Tonight.Luck"}}</th>
+          <th>{{localize "PF2E-D20.History.Nat20Rate"}}</th>
+          <th>{{localize "PF2E-D20.History.Best"}}</th>
+          <th>{{localize "PF2E-D20.History.Worst"}}</th>
+          <th class="spark-col">{{localize "PF2E-D20.History.Trend"}}</th>
+        </tr></thead>
         <tbody>
           {{#each history.groups}}
             <tr class="row band-{{this.band}} {{#if this.thin}}thin{{/if}}">
               <td class="who"><b>{{this.label}}</b></td>
               <td>{{this.evenings}}</td>
               <td>{{this.allTime.n}}</td>
-              <td>{{d20fixed this.allTime.mean 2}}</td>
-              <td class="z">{{#if this.none}}–{{else}}{{d20signed this.allTime.z 2}} <em>{{this.bandLabel}}</em>{{/if}}</td>
+              <td>{{d20fixed this.allTime.mean 1}}</td>
+              <td class="z" title="{{this.luckTitle}}">{{#if this.none}}–{{else}}<b>{{this.luckPct}}%</b> <em>{{this.bandLabel}}</em>{{/if}}</td>
               <td>{{this.nat20RateLabel}}</td>
-              <td>{{#if this.best}}{{this.best.key}} <small>{{d20signed this.best.z 1}}</small>{{else}}–{{/if}}</td>
-              <td>{{#if this.worst}}{{this.worst.key}} <small>{{d20signed this.worst.z 1}}</small>{{else}}–{{/if}}</td>
-              <td class="spark-col"><div class="spark">{{#each this.spark}}<span class="{{this.cls}}" style="height: {{this.h}}%" title="{{this.key}}: z {{this.z}} (n {{this.n}})"></span>{{/each}}</div></td>
+              <td>{{#if this.best}}{{this.best.key}} <small>{{this.bestPct}}%</small>{{else}}–{{/if}}</td>
+              <td>{{#if this.worst}}{{this.worst.key}} <small>{{this.worstPct}}%</small>{{else}}–{{/if}}</td>
+              <td class="spark-col"><div class="spark">{{#each this.spark}}<span class="{{this.cls}}" style="height: {{this.h}}%" title="{{this.key}}: {{this.pct}} (z {{this.z}}, {{this.n}} rolls)"></span>{{/each}}</div></td>
             </tr>
           {{/each}}
         </tbody>
       </table>
 
       <table class="leaderboard history-grid">
-        <thead><tr><th class="who">{{localize "PF2E-D20.Controls.Session"}}</th><th>n</th><th>{{localize "PF2E-D20.Tonight.Party"}}</th>{{#each history.groups}}<th>{{this.label}}</th>{{/each}}</tr></thead>
+        <thead><tr><th class="who">{{localize "PF2E-D20.Controls.Session"}}</th><th>{{localize "PF2E-D20.Tonight.Rolls"}}</th><th>{{localize "PF2E-D20.Tonight.Party"}}</th>{{#each history.groups}}<th>{{this.label}}</th>{{/each}}</tr></thead>
         <tbody>
           {{#each history.sessions}}
             <tr>
               <td class="who"><b>{{this.label}}</b></td>
               <td>{{this.n}}</td>
-              <td class="z band-{{this.party.band}}">{{d20signed this.party.z 2}}</td>
-              {{#each this.cellList}}<td class="z band-{{this.band}} {{#if this.thin}}thin{{/if}}">{{#if this.present}}{{#if this.none}}– <small>{{this.n}}</small>{{else}}{{d20signed this.z 2}} <small>{{this.n}}</small>{{/if}}{{else}}–{{/if}}</td>{{/each}}
+              <td class="z band-{{this.party.band}}" title="{{this.partyTitle}}">{{#if this.partyPct}}{{this.partyPct}}%{{else}}–{{/if}}</td>
+              {{#each this.cellList}}<td class="z band-{{this.band}} {{#if this.thin}}thin{{/if}}" title="{{this.title}}">{{#if this.present}}{{#if this.none}}– <small>{{this.n}}</small>{{else}}{{this.pct}}% <small>{{this.n}}</small>{{/if}}{{else}}–{{/if}}</td>{{/each}}
             </tr>
           {{/each}}
         </tbody>

@@ -1,0 +1,55 @@
+<div class="report-body">
+  {{#if empty}}
+    <p class="empty">{{localize "PF2E-D20.Tonight.NoRolls"}}</p>
+  {{else}}
+    <div class="party band-{{party.band}}">
+      <div class="party-title">{{label}}</div>
+      <p class="party-sentence">{{partySentence}}</p>
+      {{#if party.meter}}
+        <span class="luck-meter wide" title="{{party.luckTitle}}"><span class="fill {{party.meter.side}}" style="left: {{party.meter.left}}%; width: {{party.meter.width}}%"></span><span class="tick"></span></span>
+      {{/if}}
+    </div>
+
+    <table class="leaderboard">
+      <thead><tr>
+        <th class="who"></th>
+        <th>{{localize "PF2E-D20.Tonight.Rolls"}}</th>
+        <th>{{localize "PF2E-D20.Tonight.Average"}}</th>
+        <th>{{localize "PF2E-D20.Tonight.Nat20"}}</th>
+        <th>{{localize "PF2E-D20.Tonight.Nat1"}}</th>
+        <th class="luck-col">{{localize "PF2E-D20.Tonight.Luck"}}</th>
+      </tr></thead>
+      <tbody>
+        {{#each rows}}
+          <tr class="row band-{{this.band}} {{#if this.thin}}thin{{/if}}">
+            <td class="who"><b>{{this.label}}</b>{{#if this.subtitle}}<small>{{this.subtitle}}</small>{{/if}}</td>
+            <td>{{this.luck.n}}</td>
+            <td>{{this.average}} <small>{{this.averageDelta}}</small></td>
+            <td>{{this.luck.nat20.count}}</td>
+            <td>{{this.luck.nat1.count}}</td>
+            <td class="luck-col" title="{{this.luckTitle}}">
+              {{#if this.meter}}
+                <span class="luck-meter"><span class="fill {{this.meter.side}}" style="left: {{this.meter.left}}%; width: {{this.meter.width}}%"></span><span class="tick"></span></span>
+                <b class="luck-pct">{{this.luckText}}</b> <em>{{this.bandLabel}}</em>
+              {{else}}<small>{{this.luckText}}</small>{{/if}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+
+    {{#if awards.length}}
+      <div class="box-title"><i class="fa-solid fa-trophy"></i> {{localize "PF2E-D20.Fun.Awards"}}</div>
+      <ul class="awards">{{#each awards}}<li><b>{{this.title}}</b> {{this.text}}</li>{{/each}}</ul>
+    {{/if}}
+    {{#if highlights.length}}
+      <div class="box-title"><i class="fa-solid fa-star"></i> {{localize "PF2E-D20.Report.Highlights"}}</div>
+      <ul class="awards">{{#each highlights}}<li>{{this}}</li>{{/each}}</ul>
+    {{/if}}
+  {{/if}}
+  <footer class="report-foot">
+    <button type="button" class="pill" data-action="openTracker"><i class="fa-solid fa-dice-d20"></i> {{localize "PF2E-D20.Report.OpenTracker"}}</button>
+    {{#if isGM}}<button type="button" class="pill" data-action="shareLink" title="{{localize "PF2E-D20.Report.ShareHint"}}"><i class="fa-solid fa-link"></i> {{localize "PF2E-D20.Report.Share"}}</button>{{/if}}
+    <small>{{localize "PF2E-D20.Report.Foot"}}</small>
+  </footer>
+</div>

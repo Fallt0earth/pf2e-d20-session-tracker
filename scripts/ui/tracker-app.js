@@ -6,7 +6,7 @@ import { buildSessionModel } from "./view-model.js";
 import { buildFunModel } from "./fun-model.js";
 import { buildHistoryModel } from "./history-model.js";
 import { decorateFunGroup, decorateAwards } from "./fun-decorate.js";
-import { postSummary } from "./summary-card.js";
+import { decorateRow, partySentence, luckPercent } from "./tonight-decorate.js";
 import { exportRecords } from "./export.js";
 import { viewOptionsFor } from "./view-options.js";
 import { sessionLabel } from "../sessions/bucket.js";
@@ -35,7 +35,7 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
       toggleExclude: TrackerApp.#onToggleExclude,
       deleteSession: TrackerApp.#onDeleteSession,
       resetAll: TrackerApp.#onResetAll,
-      postSummary: TrackerApp.#onPostSummary,
+      openReport: TrackerApp.#onOpenReport,
       exportSession: TrackerApp.#onExport,
       exportAll: TrackerApp.#onExport,
     },
@@ -141,16 +141,12 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _decorate(model) {
-    const row = (r) => ({
-      ...r,
-      expanded: this.expanded.has(r.id),
-      bandLabel: game.i18n.localize(`PF2E-D20.Band.${r.band}`),
-      thin: r.luck.zGuard === "thin",
-      none: r.luck.zGuard === "none",
-      histBars: r.hist.map((c, i) => ({ face: i + 1, count: c, pct: Math.round((c / Math.max(1, Math.max(...r.hist))) * 100) })),
-      types: Object.entries(r.byType).sort((a, b) => b[1] - a[1]).map(([type, n]) => ({ type, n })),
-    });
-    return { ...model, party: row(model.party), rows: model.rows.map(row) };
+    return {
+      ...model,
+      party: decorateRow(model.party),
+      partySentence: partySentence(model.party),
+      rows: model.rows.map((r) => decorateRow(r, { expanded: this.expanded.has(r.id) })),
+    };
   }
 
   /** History across every non-excluded evening, decorated for the template. */
@@ -161,18 +157,25 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const band = (b) => game.i18n.localize(`PF2E-D20.Band.${b}`);
     const spark = (points) => points.map((p) => {
       const z = p.zGuard === "none" || p.z === null ? 0 : Math.max(-3, Math.min(3, p.z));
-      return { key: p.key, z: p.z === null ? "–" : p.z.toFixed(2), n: p.n, h: Math.round((Math.abs(z) / 3) * 100), cls: z > 0 ? "pos" : z < 0 ? "neg" : "zero" };
+      const pct = luckPercent(p);
+      return { key: p.key, z: p.z === null ? "–" : p.z.toFixed(2), pct: pct === null ? "–" : `${pct}%`, n: p.n, h: Math.round((Math.abs(z) / 3) * 100), cls: z > 0 ? "pos" : z < 0 ? "neg" : "zero" };
     });
+    const pctOf = (l) => { const p = luckPercent(l); return p === null ? null : p; };
+    const zTitle = (l) => (l.z === null || l.z === undefined ? "" : game.i18n.format("PF2E-D20.Tonight.LuckTitle", { pct: pctOf(l) ?? "–", z: `${l.z > 0 ? "+" : ""}${l.z.toFixed(2)}` }));
     const groups = m.groups.map((g) => ({
       ...g, bandLabel: band(g.band), thin: g.allTime.zGuard === "thin", none: g.allTime.zGuard === "none",
+      luckPct: pctOf(g.allTime), luckTitle: zTitle(g.allTime),
+      bestPct: g.best ? pctOf(g.best) : null, worstPct: g.worst ? pctOf(g.worst) : null,
       nat20RateLabel: g.nat20Rate === null ? "–" : `${(g.nat20Rate * 100).toFixed(1)}%`,
       spark: spark(g.points),
     }));
     const sessionsOut = m.sessions.slice().reverse().map((s) => ({
       ...s,
-      cellList: m.groups.map((g) => { const c = s.cells[g.id]; return c ? { present: true, ...c, thin: c.zGuard === "thin", none: c.zGuard === "none" } : { present: false }; }),
+      partyPct: pctOf(s.party), partyTitle: zTitle(s.party),
+      cellList: m.groups.map((g) => { const c = s.cells[g.id]; return c ? { present: true, ...c, thin: c.zGuard === "thin", none: c.zGuard === "none", pct: pctOf(c), title: zTitle(c) } : { present: false }; }),
     }));
-    return { ...m, groups, sessions: sessionsOut, party: { ...m.party, bandLabel: band(m.party.band), evenings: m.sessions.length } };
+    const party = { ...m.party, bandLabel: band(m.party.band), evenings: m.sessions.length, luckPct: pctOf(m.party.allTime), luckTitle: zTitle(m.party.allTime), bestPct: m.party.best ? pctOf(m.party.best) : null, worstPct: m.party.worst ? pctOf(m.party.worst) : null };
+    return { ...m, groups, sessions: sessionsOut, party };
   }
 
   _onRender(context, options) {
@@ -198,20 +201,9 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
   static async #onSetCountMode(_event, target) { await setSetting(SETTINGS.countMode, target.dataset.value); this.render({ parts: ["header", "tonight", "fun"] }); }
   static async #onToggleGM() { await setSetting(SETTINGS.includeGM, !getSetting(SETTINGS.includeGM)); this.render({ parts: ["header", "tonight", "fun"] }); }
   static async #onToggleRaw() { await setSetting(SETTINGS.includeRaw, !getSetting(SETTINGS.includeRaw)); this.render({ parts: ["header", "tonight", "fun"] }); }
-  static async #onPostSummary() {
-    if (!game.user.isGM) return;
-    const whisper = await foundry.applications.api.DialogV2.wait({
-      window: { title: game.i18n.localize("PF2E-D20.Summary.Post") },
-      content: `<p>${game.i18n.localize("PF2E-D20.Summary.PostHint")}</p>`,
-      buttons: [
-        { action: "public", label: game.i18n.localize("PF2E-D20.Summary.Public"), icon: "fa-solid fa-comments", default: true },
-        { action: "whisper", label: game.i18n.localize("PF2E-D20.Summary.Whisper"), icon: "fa-solid fa-user-secret" },
-        { action: "cancel", label: game.i18n.localize("Cancel"), icon: "fa-solid fa-xmark" },
-      ],
-      rejectClose: false,
-    });
-    if (whisper !== "public" && whisper !== "whisper") return;
-    await postSummary(this.source, this.sessionKey, { whisper: whisper === "whisper" });
+  /** Opens the evening report in its own popup on this client only. Nothing is posted to chat. */
+  static #onOpenReport() {
+    game.modules.get(MODULE_ID)?.api?.openReport(this.sessionKey);
   }
   static #onToggleExpand(_event, target) {
     const id = target.dataset.id;
