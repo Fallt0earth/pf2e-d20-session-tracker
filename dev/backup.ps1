@@ -6,12 +6,17 @@
 param(
   [switch]$NoPull,
   [int]$Keep = 5,
-  [string]$NasHost = 'user@your-docker-host'
+  [string]$NasHost
 )
 
 $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$Base = '/mnt/user/appdata/foundry-dev'
+# Host details are NOT in the repository: dev/local.ps1 (git-ignored; copy dev/local.example.ps1) or -NasHost.
+$LocalConfig = Join-Path $PSScriptRoot 'local.ps1'
+if (Test-Path $LocalConfig) { . $LocalConfig }
+if (-not $NasHost) { $NasHost = $D20NasHost }
+if (-not $NasHost) { throw 'Set $D20NasHost in dev/local.ps1 (see dev/local.example.ps1), or pass -NasHost.' }
+$Base = if ($D20NasBase) { $D20NasBase } else { '/mnt/user/appdata/foundry-dev' }
 $Stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $Name = "foundry-dev-data-$Stamp.tgz"
 

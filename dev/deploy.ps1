@@ -13,13 +13,20 @@ param(
   [switch]$Compose,
   [switch]$Restart,
   [switch]$SkipHealth,
-  [string]$NasHost = 'user@your-docker-host',
-  [string]$HealthUrl = 'http://your-docker-host:30000/api/status'
+  [string]$NasHost,
+  [string]$HealthUrl
 )
 
 $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$Base = '/mnt/user/appdata/foundry-dev'
+# Host details are NOT in the repository. They come from dev/local.ps1 (git-ignored; copy
+# dev/local.example.ps1) or from the -NasHost / -HealthUrl parameters.
+$LocalConfig = Join-Path $PSScriptRoot 'local.ps1'
+if (Test-Path $LocalConfig) { . $LocalConfig }
+if (-not $NasHost) { $NasHost = $D20NasHost }
+if (-not $HealthUrl -and $D20FoundryUrl) { $HealthUrl = "$D20FoundryUrl/api/status" }
+if (-not $NasHost -or -not $HealthUrl) { throw 'Set $D20NasHost and $D20FoundryUrl in dev/local.ps1 (see dev/local.example.ps1), or pass -NasHost and -HealthUrl.' }
+$Base = if ($D20NasBase) { $D20NasBase } else { '/mnt/user/appdata/foundry-dev' }
 $AppDir = "$Base/app"
 $ComposeFile = "$AppDir/docker-compose.yml"
 # What ships to the NAS as the module tree (mounted read-only into the container).

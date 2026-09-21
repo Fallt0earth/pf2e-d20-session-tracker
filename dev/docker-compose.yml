@@ -25,7 +25,6 @@ services:
       FOUNDRY_MINIFY_STATIC_FILES: "false"
       FOUNDRY_TELEMETRY: "false"
       FOUNDRY_IP_DISCOVERY: "false"
-      FOUNDRY_LOCAL_HOSTNAME: your-docker-host
       # Auto-launch the dev world after every (re)start so a container restart never lands on the setup page.
       FOUNDRY_WORLD: devworld
       TZ: America/Chicago

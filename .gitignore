@@ -1,3 +1,9 @@
+# Host-specific and internal material: never in this public repository
+docs/nas-quickstart.MD
+dev/reference/
+dev/local.ps1
+dev/local.json
+
 node_modules/
 backups/
 dist/

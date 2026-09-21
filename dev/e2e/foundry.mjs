@@ -5,14 +5,18 @@
 //   node dev/e2e/foundry.mjs smoke                 # version, system, users, active modules, console lines
 //   node dev/e2e/foundry.mjs eval "game.version"   # evaluate an expression as the GM and print JSON
 //   node dev/e2e/foundry.mjs eval --user PlayerA "game.user.name"
-//   FOUNDRY_URL=http://your-docker-host:30000 overrides the target.
+//   Target: the FOUNDRY_URL env var, else "foundryUrl" in dev/local.json (git-ignored; copy
+//   dev/local.example.json), else http://localhost:30000. Real host names stay out of the repository.
 //
 // Library use:  import { withFoundry } from "./foundry.mjs";
 //               await withFoundry({ user: "Gamemaster" }, async (page, log) => { ... });
 
+import { existsSync, readFileSync } from "node:fs";
 import { chromium } from "playwright";
 
-export const FOUNDRY_URL = process.env.FOUNDRY_URL ?? "http://your-docker-host:30000";
+const LOCAL_CONFIG = new URL("../local.json", import.meta.url);
+const localConfig = existsSync(LOCAL_CONFIG) ? JSON.parse(readFileSync(LOCAL_CONFIG, "utf8")) : {};
+export const FOUNDRY_URL = process.env.FOUNDRY_URL ?? localConfig.foundryUrl ?? "http://localhost:30000";
 
 /**
  * Launch a browser, join the world as `user`, run `fn(page, log)`, then close.
