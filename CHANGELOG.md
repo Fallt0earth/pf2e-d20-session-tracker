@@ -4,6 +4,21 @@ All notable changes to this module. Versions are never reused.
 
 ## [Unreleased]
 
+## [1.1.1] — 2026-09-21
+Hardening release. Nothing changes in how the tracker looks or is used; stored data opens unchanged.
+Chat messages are written by the players' own clients, so the module now treats every part of one as
+untrusted input.
+- **A reroll can only ever touch the roller's own earlier record.** The reroll annotation a client adds to its message is checked against the message itself; it can refresh the reroll link of that user's own original roll (or of any roll when a GM rerolls it) and nothing else. A stored die, its time and its roller never change once recorded.
+- **Toolbelt saves are credited to the named roller only when that user could have rolled for the token** (its owner or a GM); otherwise the record falls back to whoever made the update and is marked as a guess. Save entries that are not keyed by a token id are ignored, and endless re-rolls of one save stop producing records.
+- **Bounds everywhere:** at most 24 dice per message and 5 000 per session are recorded; a d20 result outside 1–20 is not a die; roll data is walked to a fixed depth; text fields are clipped and enumerated fields only keep known values; one malformed message can no longer abort a catch-up.
+- **Message time is checked:** nothing is filed in the future, and a player's live roll whose timestamp is more than 15 minutes from the GM's clock is filed under the GM's clock.
+- **Card parsing is linear-time** (rerolls recovered from HTML, PF2e Flat Check cards): clipped input and bounded patterns, so a crafted message cannot stall the GM's client.
+- **Report links:** only a GM's own link message gets a working Open button, and only well-formed keys of stored sessions open a window.
+- **CSV export:** text a spreadsheet would run as a formula opens as text.
+- Summaries use prototype-free tallies, so a statistic or name such as `constructor` stays plain data.
+- The analyzer macro escapes names in its optional whisper.
+- **Supply chain:** nothing from npm has ever shipped in the module; now the development tree is minimal too: 90 installed packages became 2 (`typescript` and `playwright-core`, both exact-pinned, neither with dependencies or install scripts), and install scripts are disabled outright. ESLint 9 (end of life, 86 packages) is replaced by a small check on the TypeScript compiler that also enforces the pure layer by construction; esbuild (a native binary with an install script) is replaced by a thirty-line bundler on the same compiler, and the analyzer macro it builds is verified against its sources by a test. The release workflow uses only GitHub's checkout action pinned to a commit, creates the release with the runner's own `gh`, validates the tag, never installs packages, and attaches `SHA256SUMS.txt`. A policy test fails on any drift. Development moves to the Node 24 LTS line (`engines.node >=22`; the test script now uses default discovery, because a directory argument runs nothing on Node 22+), and `.npmrc` adds a 14-day release-age cooldown.
+
 ## [1.1.0] — 2026-09-19
 - **Configurable session definition** (Sessions tab → Session definition, also in module settings). Three ways to define a session:
   - *By day* (the 1.0 rule): one session per day with a turnover hour, now with a plain-language preview and a "we usually start at" helper that places the turnover 12 hours away from play.

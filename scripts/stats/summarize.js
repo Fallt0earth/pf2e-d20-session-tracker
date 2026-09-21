@@ -18,14 +18,19 @@ export function groupSummary(records, opts = {}) {
   const timestamps = ordered.filter((r) => Number.isInteger(r.natural)).map((r) => r.ts);
   const hist = histogram(naturals);
   const luck = luckSummary(naturals);
-  const byType = {}, byStat = {};
+  // Maps, not objects: the keys are strings that came out of chat messages ("constructor" is a valid slug).
+  const byType = new Map(), byStat = new Map();
+  const tally = (map, key, natural) => {
+    const t = map.get(key) ?? { n: 0, sum: 0 };
+    t.n++; t.sum += natural;
+    map.set(key, t);
+  };
   for (const r of ordered) {
     if (!Number.isInteger(r.natural)) continue;
-    (byType[r.type] ??= { n: 0, sum: 0 }).n++; byType[r.type].sum += r.natural;
-    const stat = r.stat ?? null;
-    if (stat) { (byStat[stat] ??= { n: 0, sum: 0 }).n++; byStat[stat].sum += r.natural; }
+    tally(byType, String(r.type), r.natural);
+    if (typeof r.stat === "string" && r.stat) tally(byStat, r.stat, r.natural);
   }
-  const finish = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, { n: v.n, mean: v.n ? v.sum / v.n : null }]).sort((a, b) => b[1].n - a[1].n));
+  const finish = (map) => Object.fromEntries([...map].map(([k, v]) => [k, { n: v.n, mean: v.n ? v.sum / v.n : null }]).sort((a, b) => b[1].n - a[1].n));
   return {
     n: naturals.length,
     luck,

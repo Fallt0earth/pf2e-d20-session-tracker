@@ -105,8 +105,9 @@ export function buildSessionModel(records, opts) {
 function groupRow(id, recs, o, forcedLabel) {
   const naturals = recs.map((r) => r.natural);
   const luck = luckSummary(naturals);
-  const byType = {};
-  for (const r of recs) byType[r.type] = (byType[r.type] ?? 0) + 1;
+  const counts = new Map(); // keyed by strings that came out of chat messages: a Map, not an object
+  for (const r of recs) counts.set(String(r.type), (counts.get(String(r.type)) ?? 0) + 1);
+  const byType = Object.fromEntries(counts);
   const aliases = countValues(recs.map((r) => r.alias).filter(Boolean));
   const label = forcedLabel ?? labelFor(id, o, aliases);
   return {
@@ -123,7 +124,7 @@ function groupRow(id, recs, o, forcedLabel) {
 
 function labelFor(id, o, aliases) {
   const map = o.groupBy === "actor" ? o.labels?.actors : o.labels?.users;
-  if (map && map[id]) return map[id];
+  if (map && Object.hasOwn(map, id) && map[id]) return map[id];
   if (o.groupBy === "actor") return topKeys(aliases, 1)[0] ?? (id === "unknown" ? "Unknown" : id);
   return id === "unknown" ? "Unknown" : id;
 }

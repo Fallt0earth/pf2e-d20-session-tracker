@@ -12,7 +12,7 @@
 //               await withFoundry({ user: "Gamemaster" }, async (page, log) => { ... });
 
 import { existsSync, readFileSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "playwright-core";
 
 const LOCAL_CONFIG = new URL("../local.json", import.meta.url);
 const localConfig = existsSync(LOCAL_CONFIG) ? JSON.parse(readFileSync(LOCAL_CONFIG, "utf8")) : {};
@@ -53,7 +53,7 @@ export async function openSession({ user = "Gamemaster", headless = true, timeou
 }
 
 /**
- * Foundry v13 wants Chromium ≥ 132; Playwright 1.49 (the last line for Node 18) bundles 131.
+ * Foundry v13 wants Chromium ≥ 132; the Chromium bundled with a Playwright release that still runs on Node 18 can be older.
  * Prefer the system Edge (always present on Windows 11, far newer); FOUNDRY_BROWSER=chromium forces the bundle.
  */
 async function launchBrowser(headless) {

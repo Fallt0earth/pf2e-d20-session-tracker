@@ -67,6 +67,12 @@
  * @property {boolean|null} [inCombat]
  * @property {(baseId: string) => RollRecord|undefined} [existing]
  * @property {boolean} [captureRawRolls]
+ * @property {() => number} [now]                         The writer's clock; lets the normalizer judge message.timestamp.
+ * @property {(userId: string|null) => boolean} [isGM]    GMs are trusted; players' claims are checked.
+ * @property {(id: string) => RollRecord|null} [find]     A stored record by id (reroll links only refresh the roller's own record).
+ * @property {(msgId: string) => string|null} [messageAuthor]  Author of a message that still exists, else null.
+ * @property {(text: string, error?: unknown) => void} [warn]
+ * @property {(sceneId: string|null, tokenId: string) => { actorId?: string|null, alias?: string|null, rollers?: string[]|null } | null} [resolveToken]
  */
 
 export {};

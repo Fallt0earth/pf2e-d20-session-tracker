@@ -38,11 +38,14 @@ Open the window from the token controls (d20 icon), a keybinding you assign, or 
 ## Settings (GM)
 Session definition (by day / by pause / Start–End), idle hours, timezone and turnover hour; capture on/off (pause while prepping); count raw d20 rolls; minimum dice to list an evening; player access (whole table / own rolls / GM only); blind-roll policy for player views; Monte Carlo iterations.
 
-## Privacy note
+## Privacy and trust
 Blind and secret roll results are stored in a GM-only journal and filtered out of the player-facing view. Like blind chat messages themselves, they are technically readable through the browser console by anyone with a client; the filter is a UI guarantee, not a cryptographic one.
 
+Foundry rolls dice on the roller's own client, so no module can prove a die was really rolled; a player who edits their own messages can invent their own dice, with or without this module. What the tracker does guarantee is that a player's messages cannot change **anyone else's** numbers: a recorded die, its time and its roller are settled once stored, a reroll only ever links to the roller's own earlier roll, and everything read from a message is bounded in size and shape. When grouping by character, the character is whatever the message's speaker says; group by player for attribution the server enforces.
+
 ## Development
-- `npm install`, then `npm test` (pure stats/normalizer layer under `node --test`) and `npm run lint` (ESLint also enforces that the pure layer imports nothing from Foundry).
+- Node 22 or newer (developed on the 24 LTS line; `.node-version`). `npm ci`, then `npm test` (pure stats/normalizer layer under `node --test`) and `npm run lint` (the TypeScript compiler checks every name and import, and compiles the pure layer with no Foundry or DOM globals, so it cannot touch them).
+- **Supply chain:** the module ships plain files with no packages in them. Development needs two exact-pinned packages without dependencies of their own (`typescript`, `playwright-core`); install scripts are disabled in `.npmrc`; the release workflow uses only GitHub's own checkout action pinned to a commit, installs nothing, and attaches `SHA256SUMS.txt` to each release. `test/supply-chain.test.js` fails if any of that drifts.
 - `npm run build:macro` bundles `macros/analyze.js`, a pasteable script macro that validates the normaliser against a world's recent chat.
 - Dev instance and headless verification: see `docs/PLAN.md`, `docs/TESTING.md`, `dev/e2e/`.
 

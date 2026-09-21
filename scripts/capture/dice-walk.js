@@ -15,6 +15,13 @@
  * @property {number} dieIndex      Running index across the whole message (assigned by the caller).
  */
 
+import { MAX_DICE_PER_MESSAGE, isNatural } from "./sanitize.js";
+
+const MAX_DEPTH = 12;    // pools in parentheses in pools: real formulas are two or three levels deep
+const MAX_TERMS = 2000;  // terms visited per roll
+const MAX_ROLLS = 50;    // rolls looked at per message
+const MAX_ROLL_JSON = 200_000; // a PF2e CheckRoll serializes to a few KB
+
 /**
  * Parse a rolls entry, tolerating already-parsed objects and malformed JSON.
  * @param {string|object} entry
@@ -22,8 +29,11 @@
  */
 export function parseRoll(entry) {
   if (entry && typeof entry === "object") return entry;
-  if (typeof entry !== "string") return null;
-  try { return JSON.parse(entry); } catch { return null; }
+  if (typeof entry !== "string" || entry.length > MAX_ROLL_JSON) return null;
+  try {
+    const roll = JSON.parse(entry);
+    return roll && typeof roll === "object" ? roll : null;
+  } catch { return null; }
 }
 
 /**
@@ -32,35 +42,37 @@ export function parseRoll(entry) {
  * @param {number} rollIndex
  * @returns {D20Result[]}
  */
-export function d20sOfRoll(roll, rollIndex = 0) {
+export function d20sOfRoll(roll, rollIndex = 0, limit = MAX_DICE_PER_MESSAGE) {
   /** @type {D20Result[]} */
   const out = [];
   let termIndex = 0;
-  const visitTerm = (term) => {
-    if (!term || typeof term !== "object") return;
+  let budget = MAX_TERMS; // roll JSON comes from the rolling client: bound the walk, whatever its shape
+  const visitTerm = (term, depth) => {
+    if (!term || typeof term !== "object" || depth > MAX_DEPTH || budget-- <= 0 || out.length >= limit) return;
     if (term.class === "Die" || (term.faces !== undefined && Array.isArray(term.results))) {
       if (Number(term.faces) === 20) {
         const results = Array.isArray(term.results) ? term.results : [];
         const formula = dieFormula(term);
-        results.forEach((r, resultIndex) => {
+        for (let resultIndex = 0; resultIndex < results.length && out.length < limit; resultIndex++) {
+          const r = results[resultIndex];
           const natural = Number(r?.result);
-          if (!Number.isInteger(natural)) return;
+          if (!isNatural(natural)) continue; // a d20 shows 1–20; anything else is not a physical die
           out.push({ natural, kept: r.active !== false && !r.discarded, formula, rollIndex, termIndex, resultIndex, dieIndex: -1 });
-        });
+        }
       }
       termIndex++;
       return;
     }
     // PoolTerm: { rolls: [Roll, ...] } ; ParentheticalTerm (evaluated): { roll: Roll } ; anything with nested terms.
-    if (Array.isArray(term.rolls)) for (const inner of term.rolls) visitRoll(inner);
-    if (term.roll && typeof term.roll === "object") visitRoll(term.roll);
-    if (Array.isArray(term.terms)) for (const t of term.terms) visitTerm(t);
+    if (Array.isArray(term.rolls)) for (const inner of term.rolls) visitRoll(inner, depth + 1);
+    if (term.roll && typeof term.roll === "object") visitRoll(term.roll, depth + 1);
+    if (Array.isArray(term.terms)) for (const t of term.terms) visitTerm(t, depth + 1);
   };
-  const visitRoll = (r) => {
-    if (!r || typeof r !== "object") return;
-    if (Array.isArray(r.terms)) for (const t of r.terms) visitTerm(t);
+  const visitRoll = (r, depth) => {
+    if (!r || typeof r !== "object" || depth > MAX_DEPTH) return;
+    if (Array.isArray(r.terms)) for (const t of r.terms) visitTerm(t, depth + 1);
   };
-  visitRoll(roll);
+  visitRoll(roll, 0);
   return out;
 }
 
@@ -71,14 +83,15 @@ export function d20sOfRoll(roll, rollIndex = 0) {
  */
 export function d20sOfMessage(rolls) {
   const out = [];
-  (rolls ?? []).forEach((entry, rollIndex) => {
-    const roll = parseRoll(entry);
-    if (!roll) return;
+  const list = Array.isArray(rolls) ? rolls : [];
+  for (let rollIndex = 0; rollIndex < list.length && rollIndex < MAX_ROLLS && out.length < MAX_DICE_PER_MESSAGE; rollIndex++) {
+    const roll = parseRoll(list[rollIndex]);
+    if (!roll) continue;
     const total = Number.isFinite(Number(roll.total)) ? Number(roll.total) : null;
-    for (const d of d20sOfRoll(roll, rollIndex)) {
-      out.push({ ...d, dieIndex: out.length, total, rollFormula: typeof roll.formula === "string" ? roll.formula : null });
+    for (const d of d20sOfRoll(roll, rollIndex, MAX_DICE_PER_MESSAGE - out.length)) {
+      out.push({ ...d, dieIndex: out.length, total, rollFormula: typeof roll.formula === "string" ? roll.formula.slice(0, 80) : null });
     }
-  });
+  }
   return out;
 }
 
@@ -89,6 +102,6 @@ export function messageHasD20(rolls) {
 
 function dieFormula(term) {
   const number = Number.isInteger(Number(term.number)) ? Number(term.number) : 1;
-  const mods = Array.isArray(term.modifiers) ? term.modifiers.join("") : "";
-  return `${number}d${term.faces}${mods}`;
+  const mods = Array.isArray(term.modifiers) ? term.modifiers.filter((m) => typeof m === "string").join("") : "";
+  return `${number}d20${mods}`.slice(0, 24);
 }

@@ -64,6 +64,13 @@ export function localDateKey(ts, timezone = DEFAULT_TIMEZONE) {
   return sessionKeyFor(ts, { timezone, boundaryHour: 0 });
 }
 
+const KEY = /^\d{4}-\d{2}-\d{2}(?:~\d{1,3})?$/;
+
+/** True for a well-formed session key: `YYYY-MM-DD`, `YYYY-MM-DD~N`, or the unscheduled bucket. */
+export function isSessionKey(key) {
+  return key === UNSCHEDULED || (typeof key === "string" && KEY.test(key));
+}
+
 /** Split a key into its date and its same-day sequence number: "2026-09-19~2" → { base, seq: 2 }. */
 export function parseKey(key) {
   const [base, seq] = String(key).split("~");

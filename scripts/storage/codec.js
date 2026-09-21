@@ -16,6 +16,8 @@ export const FIELDS = Object.freeze([
   "valueHidden", "discardUnknown",
 ]);
 
+const KNOWN_FIELDS = new Set(FIELDS);
+
 const DEFAULTS = Object.freeze({
   userGuess: false, kept: true, formula: "1d20", type: "raw", source: "raw", stat: null, ident: null, action: null,
   dc: null, dcVisible: null, outcome: null, unadjustedOutcome: null, isReroll: false, rerollOf: undefined,
@@ -48,6 +50,7 @@ export function decode(packed, sessionKey) {
     /** @type {any} */
     const r = { ...DEFAULTS, domains: [] };
     fields.forEach((f, i) => {
+      if (!KNOWN_FIELDS.has(f) || !Array.isArray(row)) return; // a header names stored fields, nothing else
       const v = row[i];
       if (v === null && DEFAULTS[f] === undefined) return; // optional field absent
       r[f] = v;

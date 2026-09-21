@@ -8,15 +8,16 @@
 // With the world setting hideRollValue on, the h4 holds "Success"/"Failure" instead of the number, but
 // the dice-result class still carries the outcome.
 
+// The card is free text as far as this module knows (any client can create a message carrying the
+// flag), so parsing goes through html-scan.js: clipped input, collapsed whitespace, bounded patterns.
+
+import { prepareHtml, numericElements } from "../html-scan.js";
+
 export const id = "flat-check";
 export const on = ["create", "backfill"];
 
-const TOTAL = /<h4\s+class="[^"]*\bdice-total\b[^"]*"[^>]*>\s*(\d{1,2})\s*<\/h4>/i;
-const TOTAL_FALLBACKS = [
-  /<(?:span|div)\s+class="[^"]*\bdice-total\b[^"]*"[^>]*>\s*(\d{1,2})\s*<\//i,
-  /<li\s+class="[^"]*\bdie\b[^"]*\bd20\b[^"]*"[^>]*>\s*(\d{1,2})\s*<\/li>/i,
-];
-const DC = /Flat Check DC is\s*(?:<b>)?\s*(\d{1,2})|\bDC\s*(?:is)?\s*:?\s*(?:<b>)?\s*(\d{1,2})\b/i;
+// Whitespace runs are already collapsed to one space by prepareHtml().
+const DC = /Flat Check DC is ?(?:<b>)? ?(\d{1,2})\b|\bDC ?(?:is)? ?:? ?(?:<b>)? ?(\d{1,2})\b/i;
 const OUTCOME = /\bflat-check-(success|failure)\b/i;
 
 /** @param {import("../../types.js").MessageData} msg */
@@ -27,16 +28,18 @@ export function matches(msg) {
 
 /**
  * Parse natural, DC and outcome out of the flat-check card.
- * @param {string|undefined|null} html
+ * @param {string|undefined|null} content   message.content
  * @returns {{ natural: number|null, dc: number|null, outcome: string|null }}
  */
-export function parseFlatCheckContent(html) {
-  if (typeof html !== "string") return { natural: null, dc: null, outcome: null };
-  let natural = null;
-  for (const re of [TOTAL, ...TOTAL_FALLBACKS]) {
-    const m = re.exec(html);
-    if (m) { natural = Number(m[1]); break; }
-  }
+export function parseFlatCheckContent(content) {
+  if (typeof content !== "string") return { natural: null, dc: null, outcome: null };
+  const html = prepareHtml(content);
+  // The card's own total first, then the markup other forks use: any dice-total, then a d20 die item.
+  const has = (e, ...names) => names.every((n) => e.classes.includes(n));
+  const shown = numericElements(html, ["h4"]).find((e) => has(e, "dice-total"))
+    ?? numericElements(html, ["span", "div"]).find((e) => has(e, "dice-total"))
+    ?? numericElements(html, ["li"]).find((e) => has(e, "die", "d20"));
+  let natural = shown ? shown.value : null;
   if (natural !== null && (natural < 1 || natural > 20)) natural = null;
   const dcm = DC.exec(html);
   const dc = dcm ? Number(dcm[1] ?? dcm[2]) : null;

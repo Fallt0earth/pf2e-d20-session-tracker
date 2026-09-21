@@ -30,7 +30,7 @@ export class ReportApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @param {{ source: object, sessionKey: string }} options */
   constructor(options = {}) {
-    super({ ...options, id: `pf2e-d20-report-${options.sessionKey}` });
+    super({ ...options, id: `pf2e-d20-report-${String(options.sessionKey).replace(/[^A-Za-z0-9-]/g, "_")}` }); // an element id: "~" and the like become "_"
     this.source = options.source;
     this.sessionKey = options.sessionKey;
   }

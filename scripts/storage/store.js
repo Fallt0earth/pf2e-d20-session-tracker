@@ -2,12 +2,19 @@
 // getSession / currentKey / …) plus GM-only writes through a debounced serial queue so bursts become
 // one page update and writes never overlap. Session keys come from the pure Sessionizer (M5), seeded
 // with the time spans of the stored sessions, so live capture, catch-up and re-bucketing agree.
-import { sessionLabel, localDateKey, UNSCHEDULED } from "../sessions/bucket.js";
+import { sessionLabel, localDateKey, isSessionKey, UNSCHEDULED } from "../sessions/bucket.js";
 import { Sessionizer, rebucket, rebucketDiff, nextFreeKey, chronological } from "../sessions/sessionizer.js";
 import { sessionConfig, setSetting, SETTINGS } from "../settings.js";
 import { WriteQueue } from "../util/queue.js";
 import { findLog, ensureLog, readPage, writePage, writeMeta, deletePage } from "./journal.js";
 import { pageSummaryHtml } from "./page-text.js";
+import { mergeRecord } from "./merge.js";
+
+/**
+ * A session page is rewritten whole on every write, and any player can post rolls all night: a page
+ * stops growing here (about 1.4 MB). A long evening of a large table is a few hundred dice.
+ */
+const MAX_RECORDS_PER_SESSION = 5000;
 
 /**
  * @typedef {object} SessionEntry
@@ -30,6 +37,8 @@ export class JournalStore {
     this.loaded = false;
     this.queue = new WriteQueue({ debounceMs: 250, onError: (e, key) => console.error(`d20 tracker | write failed for ${key}`, e) });
     this.listeners = new Set();
+    /** @type {Set<string>} sessions already reported as full */
+    this._full = new Set();
   }
 
   onChange(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
@@ -50,6 +59,7 @@ export class JournalStore {
 
   _loadPage(page) {
     const { key, meta, records } = readPage(page);
+    if (!isSessionKey(key)) return null; // a page someone added to the log by hand: not a session
     const existing = this.sessions.get(key);
     if (existing) for (const r of existing.records) this._unindex(r);
     const entry = { records, ids: new Set(records.map((r) => r.id)), meta, pageId: page.id, firstTs: null, lastTs: null };
@@ -68,7 +78,7 @@ export class JournalStore {
     }
     if (!this.queue.idle) return null; // our own write echoing back; memory is already current
     const key = this._loadPage(page);
-    this._emit(key);
+    if (key !== null) this._emit(key);
     return key;
   }
 
@@ -159,16 +169,18 @@ export class JournalStore {
     const touched = new Set();
     for (const incoming of records) {
       const known = this.find(incoming.id);
-      const r = known && known.sessionKey !== incoming.sessionKey ? { ...incoming, sessionKey: known.sessionKey } : incoming;
+      let r = known && known.sessionKey !== incoming.sessionKey ? { ...incoming, sessionKey: known.sessionKey } : incoming;
       const s = this._session(r.sessionKey);
       const idx = s.records.findIndex((x) => x.id === r.id);
       if (idx >= 0) {
-        const merged = { ...s.records[idx], ...r };
+        const merged = mergeRecord(s.records[idx], r); // the stored die, time and roller are settled
         if (JSON.stringify(merged) === JSON.stringify(s.records[idx])) continue;
         this._unindex(s.records[idx]);
         s.records[idx] = merged;
         this._index(merged);
+        r = merged;
       } else {
+        if (s.records.length >= MAX_RECORDS_PER_SESSION) { this._warnFull(r.sessionKey); continue; }
         s.records.push(r);
         s.ids.add(r.id);
         this._index(r);
@@ -179,6 +191,14 @@ export class JournalStore {
     }
     for (const key of touched) { this.queue.schedule(key, (k) => this._flush(k)); this._emit(key); }
     return [...touched];
+  }
+
+  /** Once per session and page load: the session holds all it will take (see MAX_RECORDS_PER_SESSION). */
+  _warnFull(key) {
+    if (this._full.has(key)) return;
+    this._full.add(key);
+    console.warn(`d20 tracker | session ${key} holds ${MAX_RECORDS_PER_SESSION} dice; further rolls are not recorded`);
+    ui.notifications?.warn(game.i18n.format("PF2E-D20.Sessions.Full", { label: sessionLabel(key), max: MAX_RECORDS_PER_SESSION }));
   }
 
   async _flush(key) {

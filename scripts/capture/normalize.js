@@ -4,26 +4,54 @@
 // Input is the plain `ChatMessage#toObject()` shape (docs/PLAN.md §4.1); no Foundry globals here.
 
 import { EXTRACTORS } from "./extractors/index.js";
+import { sanitizeRecord, authorOf, MAX_DICE_PER_MESSAGE, CLOCK_SKEW_MS } from "./sanitize.js";
 
 /**
+ * A message is written by the rolling client, so nothing in it is trusted: an extractor that throws
+ * loses only its own message (never the rest of a catch-up), at most MAX_DICE_PER_MESSAGE dice are
+ * kept, and every record is coerced to the stored shape before it leaves.
  * @param {import("../types.js").MessageData} msg
  * @param {import("../types.js").NormalizeContext} ctx
  * @returns {import("../types.js").RollRecord[]}
  */
 export function messageToRollRecords(msg, ctx) {
-  if (!msg || typeof msg !== "object" || !msg._id) return [];
-  const ts = Number(msg.timestamp);
-  if (!Number.isFinite(ts)) return [];
+  if (!msg || typeof msg !== "object" || typeof msg._id !== "string" || !msg._id || msg._id.length > 64) return [];
+  const ts = effectiveTimestamp(msg, ctx);
+  if (ts === null) return [];
   const base = makeBase(msg, ctx, ts);
   const out = [];
   for (const ex of EXTRACTORS) {
     if (!ex.on.includes(ctx.event)) continue;
-    let hit = false;
-    try { hit = ex.matches(msg); } catch { hit = false; }
-    if (!hit) continue;
-    out.push(...ex.extract(msg, ctx, base));
+    try {
+      if (!ex.matches(msg)) continue;
+      for (const r of ex.extract(msg, ctx, base)) {
+        const clean = sanitizeRecord(r);
+        if (clean && out.length < MAX_DICE_PER_MESSAGE) out.push(clean);
+      }
+    } catch (e) {
+      ctx.warn?.(`extractor ${ex.id} skipped message ${msg._id}`, e);
+    }
   }
   return out;
+}
+
+/**
+ * The time a record is filed under. `message.timestamp` is set by the rolling client, so:
+ *  - nothing is ever filed in the future (it would hold the running session open);
+ *  - a live roll by a player whose timestamp is far from the writer's clock gets the writer's time.
+ * A GM's messages are taken as they are (imports, and the e2e harness, create dated messages).
+ * Without `ctx.now` (analyzer macro, unit tests) the message's own timestamp is used.
+ * @returns {number|null}
+ */
+function effectiveTimestamp(msg, ctx) {
+  const claimed = Number(msg.timestamp);
+  if (!Number.isFinite(claimed) || claimed <= 0) return null;
+  const now = typeof ctx.now === "function" ? Number(ctx.now()) : NaN;
+  if (!Number.isFinite(now)) return claimed;
+  const byGM = ctx.isGM?.(authorOf(msg)) === true;
+  if (ctx.event === "create" && !byGM && Math.abs(now - claimed) > CLOCK_SKEW_MS) return now;
+  if (claimed > now + CLOCK_SKEW_MS) return now;
+  return claimed;
 }
 
 /**
@@ -49,7 +77,7 @@ function makeBase(msg, ctx, ts) {
   const defaults = {
     msgId: msg._id,
     ts,
-    userId: typeof msg.author === "string" ? msg.author : (msg.author?._id ?? msg.author?.id ?? msg.user ?? null),
+    userId: authorOf(msg),
     actorId: speaker.actor ?? null,
     tokenId: speaker.token ?? null,
     alias: speaker.alias ?? null,

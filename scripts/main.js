@@ -11,6 +11,7 @@ import { ReportApp } from "./ui/report-app.js";
 import { registerReportLinks } from "./ui/report-link.js";
 import { registerEntryPoints, canOpen } from "./ui/entry.js";
 import { buildApi } from "./api.js";
+import { isSessionKey } from "./sessions/bucket.js";
 
 let store = null;
 let app = null;
@@ -21,7 +22,8 @@ function openReport(sessionKey) {
   if (!canOpen()) return ui.notifications.warn(game.i18n.localize("PF2E-D20.Settings.PlayerAccess.None"));
   if (!store.loaded) store.load();
   const key = sessionKey ?? store.currentKey() ?? store.listSessions().find((s) => s.n > 0 && !s.unscheduled)?.key;
-  if (!key) return ui.notifications.info(game.i18n.localize("PF2E-D20.Tonight.NoRolls"));
+  // A key can arrive from a chat button or a macro: only a well-formed key of a stored session opens a window.
+  if (!key || !isSessionKey(key) || !store.sessions.has(key)) return ui.notifications.info(game.i18n.localize("PF2E-D20.Tonight.NoRolls"));
   let report = reports.get(key);
   if (!report) { report = new ReportApp({ source: store, sessionKey: key }); reports.set(key, report); }
   report.render({ force: true });

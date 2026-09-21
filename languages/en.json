@@ -210,5 +210,6 @@
   "PF2E-D20.Sessions.AssignUnscheduled": "Move into a session",
   "PF2E-D20.Sessions.AssignHint": "Move all unscheduled rolls into this session:",
   "PF2E-D20.Sessions.DiscardUnscheduled": "Discard unscheduled rolls",
-  "PF2E-D20.Sessions.DiscardConfirm": "Delete every unscheduled roll? This cannot be undone."
+  "PF2E-D20.Sessions.DiscardConfirm": "Delete every unscheduled roll? This cannot be undone.",
+  "PF2E-D20.Sessions.Full": "{label} already holds {max} dice, the most one session stores. Further rolls are not recorded until a new session starts."
 }

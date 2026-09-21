@@ -28,7 +28,8 @@ export async function analyze({
   const messages = game.messages.contents.filter((m) => m.timestamp >= since).map((m) => m.toObject());
   const ctx = { sessionKeyFor: (ts) => sessionKeyFor(ts, { timezone, boundaryHour }), event: "backfill", captureRawRolls: includeRaw };
 
-  const coverage = {};
+  // Tallies are keyed by strings read out of chat messages: objects without a prototype.
+  const coverage = Object.create(null);
   const records = [];
   for (const m of messages) {
     const kind = classifyMessage(m) ?? (m.rolls?.length ? "roll-without-d20" : "no-roll");
@@ -42,14 +43,14 @@ export async function analyze({
     : (game.users.get(id)?.name ?? String(id));
   const keyOf = (r) => (groupBy === "actor" ? r.actorId : r.userId) ?? "unknown";
 
-  const evenings = {};
+  const evenings = Object.create(null);
   for (const r of counted) (evenings[r.sessionKey] ??= []).push(r);
   const keys = Object.keys(evenings).sort(compareKeys);
-  const tables = {};
+  const tables = Object.create(null);
   for (const key of keys) {
     const recs = evenings[key];
     if (recs.length < minRolls) continue;
-    const groups = {};
+    const groups = Object.create(null);
     for (const r of recs) (groups[keyOf(r)] ??= []).push(r.natural);
     const rows = Object.entries(groups).map(([id, naturals]) => {
       const s = luckSummary(naturals);
@@ -73,16 +74,18 @@ export async function analyze({
   if (whisper && keys.length) {
     const key = keys[keys.length - 1];
     const t = tables[key];
-    const html = `<h3>${TAG}: ${sessionLabel(key)}</h3><p>${t.party.n} dice, party mean ${t.party.mean}, z ${t.party.z}</p>` +
+    // Names and aliases are typed by players: everything that goes into the whisper is escaped.
+    const html = `<h3>${TAG}: ${esc(sessionLabel(key))}</h3><p>${esc(t.party.n)} dice, party mean ${esc(t.party.mean)}, z ${esc(t.party.z)}</p>` +
       `<table><tr><th>who</th><th>n</th><th>mean</th><th>z</th><th>nat20</th><th>nat1</th></tr>` +
-      t.rows.map((r) => `<tr><td>${r.who}</td><td>${r.n}</td><td>${r.mean}</td><td>${r.guard === "ok" ? r.z : `(${r.z})`}</td><td>${r.nat20}</td><td>${r.nat1}</td></tr>`).join("") + `</table>`;
+      t.rows.map((r) => `<tr><td>${esc(r.who)}</td><td>${esc(r.n)}</td><td>${esc(r.mean)}</td><td>${esc(r.guard === "ok" ? r.z : `(${r.z})`)}</td><td>${esc(r.nat20)}</td><td>${esc(r.nat1)}</td></tr>`).join("") + `</table>`;
     await ChatMessage.create({ content: html, whisper: game.users.filter((u) => u.isGM).map((u) => u.id) });
   }
   return { coverage, tables, records, counted: counted.length };
 }
 
+function esc(v) { return String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 function round(v, d) { return v === null || v === undefined || !Number.isFinite(v) ? null : Number(v.toFixed(d)); }
-function countBy(arr, fn) { const o = {}; for (const x of arr) { const k = fn(x); o[k] = (o[k] ?? 0) + 1; } return o; }
+function countBy(arr, fn) { const o = Object.create(null); for (const x of arr) { const k = fn(x); o[k] = (o[k] ?? 0) + 1; } return o; }
 
 globalThis.d20Analyze = analyze;
 analyze();

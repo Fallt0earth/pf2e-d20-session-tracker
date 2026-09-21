@@ -1,7 +1,7 @@
 # Testing runbook
 
 SCOPE §9 as a checklist, with how each item is produced and its latest result. Automated runs live in `dev/e2e/`:
-`make-fixtures.mjs` (fixture corpus), `spikes.mjs` (M0.5 spikes), `verify-m2.mjs` (M2 acceptance). All target the dev
+`make-fixtures.mjs` (fixture corpus), `spikes.mjs` (M0.5 spikes), `verify-m2.mjs` (M2 acceptance), `verify-m5.mjs` (1.1), `verify-hardening.mjs` (1.1.1). All target the dev
 instance at http://your-docker-host:30000 through the headless harness (`foundry.mjs`); Forge gates are manual.
 
 ## Environment
@@ -54,6 +54,41 @@ instance at http://your-docker-host:30000 through the headless harness (`foundry
 | Players see: nothing → whole table | GM changes the header control while PlayerA is connected with the window open | window closes and button disappears, then both return, no reload | PASS |
 | Round trip | by day → by pause → manual → by day, cleanup | stored sessions identical to the start (`2026-09-15`: 112) | PASS |
 
+## 1.1.1 — hardening (`test/hardening.test.js`, `dev/e2e/verify-hardening.mjs`, 2026-09-21)
+Unit (21 tests, pure layer): dice outside 1–20 and beyond 24 per message are not recorded; nesting and roll JSON are bounded; a throwing extractor loses only its own message; records are coerced to the stored shape; a player's far-off live timestamp is filed under the writer's clock, a GM's is kept, nothing lands in the future; a reroll annotation yields exact dice when well-formed, never reaches another user's stored roll or live message, only refreshes the link of the roller's own original, lets a GM reroll a player's check, and falls back to the HTML parser when malformed or contradictory; Toolbelt saves are credited to `rollerId` only for an owner or GM, odd keys / impossible dice / endless re-rolls are dropped; card parsers stay under 500 ms on large unclosed input; `constructor`, `__proto__` and friends stay plain data; CSV formula guard; codec header; merge rule; session-key shape.
+
+Regression on the dev instance with the hardened build (after `dev/backup.ps1`): `verify-m2` **18/18**, `verify-m5` **16/16**.
+
+| Item (`verify-hardening.mjs`, 11/11) | Expected | Result |
+|---|---|---|
+| Module version | 1.1.1 loaded, writer role | PASS |
+| `openReport` with a malformed key, a well-formed key that is not stored, a key with trailing text | no window | PASS |
+| `openReport` with a stored key | one window, with content | PASS |
+| Tonight / Fun / History / Sessions | all four render | PASS |
+| "Post a link in chat" | exactly one chat message carrying the key | PASS |
+| PlayerA clicks the GM's link | report window opens on the player's client | PASS |
+| The same markup and flag in PlayerA's own message, clicked by the GM | nothing opens | PASS |
+| PlayerA posts d20 rolls dated 2020 and 400 days ahead | both filed under today by the GM's clock; no 2020 or future session appears | PASS |
+| CSV of the newest session | 19 columns, one row per stored die | PASS |
+| Cleanup | stored sessions identical to the start | PASS |
+| Consoles | no module errors on the GM or the player client | PASS |
+
+## Supply chain (`test/supply-chain.test.js`, `test/macro-bundle.test.js`, 2026-09-21)
+| Item | Expected | Result |
+|---|---|---|
+| `package.json` | private; dev dependencies are exactly `playwright-core` and `typescript`, exact versions; no runtime, optional or peer dependencies; no install-time scripts | PASS |
+| `package-lock.json` | only those two packages; npm registry over TLS; sha512 integrity; no install scripts; no dependencies of their own | PASS |
+| `.npmrc` | `ignore-scripts=true`, `save-exact=true`, public registry, no credentials | PASS |
+| Shipped files | every import is relative; no URL, `fetch`, `<script>`, CSS `@import`, `eval` or `new Function`; `module.json` requires no other module | PASS |
+| Workflows | only `actions/checkout`, pinned to a 40-hex commit; no package manager; no `${{ }}` inside a run script; default token permission none | PASS |
+| Planted violations (13: a range, a runtime dependency, a postinstall, a foreign tarball with an install script, scripts re-enabled, a tag-pinned action, a third-party action, `npm ci` in CI, `${{ }}` in a script, `write-all`, a package import, a remote fetch, a remote stylesheet) | every one fails the policy tests; files restored | PASS |
+| `macros/analyze.js` | identical to a fresh build; holds only `scripts/` modules; same results as the ES modules over the fixture corpus; runs in the live dev world (`verify-hardening`) | PASS |
+| esbuild bundle vs TypeScript bundle (one-off, before the switch) | identical results, console output and whisper HTML for three option sets | PASS |
+| `dev/lint.mjs` probes | undefined names, `document` / `window` / `navigator` / `process` / `require` / `fetch` / `game` in a pure file, a pure file importing a Foundry-facing one, missing relative imports and missing exports all reported; `node:` built-ins are not | PASS |
+| `npm ci` on a removed `node_modules` | 2 packages, no scripts run, `npm audit` 0, lint, build and 107 tests green | PASS |
+| Node 24.21.0 (verified temporary copy; the PC still has 18.16 until the MSI is approved) | `npm ci` with npm 11.19 leaves `package.json` and the lockfile byte-identical; `npm audit signatures`: 2 verified registry signatures, 1 verified attestation; lint 0/0; 107 tests; macro bundle byte-identical to the Node 18 build; e2e smoke loads 1.1.1 | PASS |
+| `npm test` script | `node --test test/` runs nothing on Node 22+ (found on 24.21); `node --test` runs the same 107 tests on 18.16 and 24.21 | fixed |
+
 ## How to re-run
 ```
 node dev/e2e/foundry.mjs smoke                # module loads, versions, users
@@ -61,5 +96,7 @@ node dev/e2e/make-fixtures.mjs                # regenerate the corpus (adds mess
 node dev/e2e/spikes.mjs s1|s2|s3|s4|s5|s6|s7  # individual spikes
 node dev/e2e/verify-m2.mjs                    # M2 acceptance; deletes all chat messages on the dev world
 node dev/e2e/verify-m5.mjs                    # 1.1 session definition + access control; run dev/backup.ps1 first (it re-buckets stored data)
-npm test && npm run lint
+node dev/e2e/verify-hardening.mjs             # 1.1.1 report links, tabs, message time, export; cleans up after itself
+npm ci                                        # two packages, install scripts off (.npmrc)
+npm test && npm run lint && npm run build:macro
 ```

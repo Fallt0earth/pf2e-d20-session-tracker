@@ -19,7 +19,8 @@ export function buildHistoryModel(sessions, opts) {
     const grouped = groupRecords(counted, opts);
     const naturals = counted.map((r) => r.natural);
     const party = luckSummary(naturals);
-    const row = { key: s.key, label: s.label, n: counted.length, party: { ...party, band: zBand(party.zGuard === "none" ? null : party.z) }, cells: {} };
+    // cells is keyed by user or actor id: no prototype, so an id can never resolve to an inherited member
+    const row = { key: s.key, label: s.label, n: counted.length, party: { ...party, band: zBand(party.zGuard === "none" ? null : party.z) }, cells: Object.create(null) };
     for (const g of grouped.values()) {
       if (!groups.has(g.id)) groups.set(g.id, { id: g.id, label: g.label, sessions: [] });
       const nats = g.records.map((r) => r.natural);

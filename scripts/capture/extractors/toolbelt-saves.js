@@ -7,14 +7,20 @@
 //     saveVariants: { [variantKey]: { dc, basic, statistic, saves: { [tokenId]: {
 //         die, value, success, unadjustedOutcome, private, statistic, roll: "<CheckRoll JSON>", ... } } } }
 //   }
-// `roll.options.rollerId` names the user who rolled, so attribution is exact even on catch-up.
+// `roll.options.rollerId` names the user who rolled, so attribution survives catch-up. The flag is
+// written by the card's author (or relayed by a GM), so it is believed only when plausible: see
+// trustedRoller(). Flag keys and sizes are bounded, because any player can author such a card.
 
 import { parseRoll } from "../dice-walk.js";
+import { isDocumentId, isNatural } from "../sanitize.js";
 
 export const id = "toolbelt-saves";
 export const on = ["create", "update", "backfill"];
 
 const FLAG_SCOPE = "pf2e-toolbelt";
+const MAX_TARGETS = 64;  // tokens on one damage card
+const MAX_VARIANTS = 8;  // save variants of one card
+const MAX_REROLLS = 4;   // re-rolls of one target's save that get their own record
 
 /** @param {import("../../types.js").MessageData} msg */
 export function matches(msg) {
@@ -30,18 +36,20 @@ export function extract(msg, ctx, base) {
   const out = [];
   for (const { variantKey, variant, tokenId, sceneId, save } of listSaves(msg)) {
     const roll = parseRoll(save.roll);
-    const options = roll?.options ?? {};
+    const options = roll?.options && typeof roll.options === "object" ? roll.options : {};
     const natural = numberOrNull(save.die ?? firstD20(roll));
+    if (!isNatural(natural)) continue; // not a physical d20: nothing to record
     const total = numberOrNull(save.value ?? roll?.total);
     const statistic = save.statistic ?? variant.statistic ?? null;
     const dc = numberOrNull(variant.dc);
-    const rollerId = typeof options.rollerId === "string" ? options.rollerId : null;
-    const userId = rollerId ?? (ctx.event === "update" ? ctx.updaterUserId ?? null : null);
     const token = ctx.resolveToken?.(sceneId, tokenId) ?? null;
+    const rollerId = trustedRoller(options.rollerId, token);
+    const userId = rollerId ?? (ctx.event === "update" ? ctx.updaterUserId ?? null : null);
     const baseId = `${msg._id}:tb:${safe(variantKey)}:${tokenId}`;
     const prev = ctx.existing?.(baseId);
     const prevSeq = prev ? seqOf(prev.id) : -1;
     const changed = prev && (prev.natural !== natural || prev.total !== total);
+    if (changed && prevSeq >= MAX_REROLLS) continue; // a save is re-rolled once or twice, not without end
     const seq = prev ? (changed ? prevSeq + 1 : prevSeq) : 0;
     out.push(base({
       id: `${baseId}:${seq}`,
@@ -74,21 +82,36 @@ export function extract(msg, ctx, base) {
   return out;
 }
 
+/**
+ * `rollerId` is written by whoever saved the flag (the message's author, or a GM relaying a player's
+ * request), so it is only believed when it is plausible: a well-formed user id and, when the token is
+ * known, a user who could have rolled for it (its owner or a GM). Anything else falls back to the
+ * updater and is marked as a guess.
+ * @param {unknown} rollerId
+ * @param {{ rollers?: string[] | null } | null} token
+ */
+function trustedRoller(rollerId, token) {
+  if (!isDocumentId(rollerId)) return null;
+  if (Array.isArray(token?.rollers) && !token.rollers.includes(rollerId)) return null;
+  return /** @type {string} */ (rollerId);
+}
+
 function listSaves(msg) {
   const helper = msg?.flags?.[FLAG_SCOPE]?.targetHelper;
   if (!helper || typeof helper !== "object") return [];
-  const sceneOf = {};
-  for (const t of Array.isArray(helper.targets) ? helper.targets : []) {
-    if (typeof t !== "string") continue;
-    const m = /^Scene\.([^.]+)\.Token\.([^.]+)$/.exec(t);
-    if (m) sceneOf[m[2]] = m[1];
+  const sceneOf = new Map();
+  for (const t of Array.isArray(helper.targets) ? helper.targets.slice(0, MAX_TARGETS) : []) {
+    if (typeof t !== "string" || t.length > 80) continue;
+    const m = /^Scene\.([A-Za-z0-9]{16})\.Token\.([A-Za-z0-9]{16})$/.exec(t);
+    if (m) sceneOf.set(m[2], m[1]);
   }
   const out = [];
   const variants = helper.saveVariants && typeof helper.saveVariants === "object" ? helper.saveVariants : (helper.saves ? { null: { saves: helper.saves, dc: helper.dc, statistic: helper.statistic } } : {});
-  for (const [variantKey, variant] of Object.entries(variants)) {
+  for (const [variantKey, variant] of Object.entries(variants).slice(0, MAX_VARIANTS)) {
     const saves = variant?.saves && typeof variant.saves === "object" ? variant.saves : {};
-    for (const [tokenId, save] of Object.entries(saves)) {
-      if (save && typeof save === "object") out.push({ variantKey, variant, tokenId, sceneId: sceneOf[tokenId] ?? null, save });
+    for (const [tokenId, save] of Object.entries(saves).slice(0, MAX_TARGETS)) {
+      if (!isDocumentId(tokenId) || !save || typeof save !== "object") continue; // flag keys are free text: only token ids count
+      out.push({ variantKey, variant, tokenId, sceneId: sceneOf.get(tokenId) ?? null, save });
     }
   }
   return out;
