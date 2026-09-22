@@ -86,8 +86,9 @@ Regression on the dev instance with the hardened build (after `dev/backup.ps1`):
 | esbuild bundle vs TypeScript bundle (one-off, before the switch) | identical results, console output and whisper HTML for three option sets | PASS |
 | `dev/lint.mjs` probes | undefined names, `document` / `window` / `navigator` / `process` / `require` / `fetch` / `game` in a pure file, a pure file importing a Foundry-facing one, missing relative imports and missing exports all reported; `node:` built-ins are not | PASS |
 | `npm ci` on a removed `node_modules` | 2 packages, no scripts run, `npm audit` 0, lint, build and 107 tests green | PASS |
-| Node 24.21.0 (verified temporary copy; the PC still has 18.16 until the MSI is approved) | `npm ci` with npm 11.19 leaves `package.json` and the lockfile byte-identical; `npm audit signatures`: 2 verified registry signatures, 1 verified attestation; lint 0/0; 107 tests; macro bundle byte-identical to the Node 18 build; e2e smoke loads 1.1.1 | PASS |
+| Node 24.21.0 (installed 2026-09-22; first validated on a verified temporary copy) | `npm ci` with npm 11.19 leaves `package.json` and the lockfile byte-identical; `npm audit signatures`: 2 verified registry signatures, 1 verified attestation; lint 0/0; 107 tests; macro bundle byte-identical to the Node 18 build; e2e smoke loads 1.1.1 | PASS |
 | `npm test` script | `node --test test/` runs nothing on Node 22+ (found on 24.21); `node --test` runs the same 107 tests on 18.16 and 24.21 | fixed |
+| `playwright-core` 1.63.0 on Node 24 (2026-09-22) | lockfile still 2 entries, no install scripts, verified signature + provenance; policy tests 8/8; e2e smoke loads 1.1.1; `verify-hardening` 12/12; stored sessions identical | PASS |
 
 ## How to re-run
 ```

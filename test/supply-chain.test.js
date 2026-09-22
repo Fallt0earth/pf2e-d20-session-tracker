@@ -22,6 +22,8 @@ test("package.json: dev tools only, exact versions, nothing that runs on install
   }
   assert.deepEqual(Object.keys(pkg.devDependencies).sort(), ALLOWED);
   for (const [name, range] of Object.entries(pkg.devDependencies)) assert.match(range, /^\d+\.\d+\.\d+$/, `${name}: "${range}" is not an exact version`);
+  const baseline = Number(/^>=(\d+)/.exec(pkg.engines?.node ?? "")?.[1]);
+  assert.ok(baseline >= 24, `engines.node "${pkg.engines?.node}": the dependency policy relies on npm 11, which ships with Node 24`);
   for (const hook of ["preinstall", "install", "postinstall", "prepare", "prepublish", "prepublishOnly", "prepack", "postpack"]) {
     assert.equal(pkg.scripts?.[hook], undefined, `scripts.${hook} would run on install or publish`);
   }
@@ -48,6 +50,7 @@ test(".npmrc: install scripts off, exact saves, the public registry over TLS", (
   assert.equal(settings["ignore-scripts"], "true");
   assert.equal(settings["save-exact"], "true");
   assert.ok(Number(settings["min-release-age"]) >= 7, "a release-age cooldown of at least a week");
+  assert.equal(settings["engine-strict"], "true", "the Node baseline must be enforced, not just warned about");
   assert.equal(settings.registry, "https://registry.npmjs.org/");
   assert.notEqual(settings["strict-ssl"], "false");
   assert.ok(!Object.keys(settings).some((k) => /_auth|token|password/i.test(k)), "no credentials in .npmrc");

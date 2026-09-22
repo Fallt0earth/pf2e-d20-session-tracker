@@ -2,7 +2,10 @@
 
 All notable changes to this module. Versions are never reused.
 
-## [Unreleased]
+## [1.2.0] — unreleased
+Toolchain baseline release; the module's shipped files are the same as 1.1.1.
+- **Node 24 LTS is the development baseline** (`engines.node >=24`, enforced by `engine-strict` in `.npmrc`, so `npm ci` refuses an older Node instead of warning). The dependency policy's release-age cooldown relies on npm 11, which ships with Node 24; on the npm of older lines it would silently do nothing.
+- Dev tooling: `playwright-core` 1.55.1 → 1.63.0 (the 1.55 line was the last one for Node 18).
 
 ## [1.1.1] — 2026-09-21
 Hardening release. Nothing changes in how the tracker looks or is used; stored data opens unchanged.

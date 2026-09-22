@@ -3,9 +3,11 @@
 // The pure-layer rules are unit-tested (test/hardening.test.js); this run checks what only a live world
 // can show: report windows and links, every tab still rendering, a player's far-off timestamp being
 // filed under the writer's clock, and a clean console. Cleans up after itself.
+import { readFileSync } from "node:fs";
 import { openSession, evaluate } from "./foundry.mjs";
 
 const MODULE_ID = "pf2e-d20-session-tracker";
+const EXPECTED_VERSION = JSON.parse(readFileSync(new URL("../../module.json", import.meta.url), "utf8")).version;
 const API = `game.modules.get("${MODULE_ID}").api`;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const results = [];
@@ -23,7 +25,7 @@ let player = null;
 try {
   const initial = await evaluate(gm.page, `(async () => { ${HELPERS} await store.flush(); return { layout: layout(), version: game.modules.get("${MODULE_ID}").version, newest: store.listSessions().find(s => s.n > 0 && !s.unscheduled)?.key ?? null }; })()`);
   console.log("initial:", JSON.stringify(initial));
-  check("module version is 1.1.1", initial.version === "1.1.1", initial.version);
+  check(`module version is ${EXPECTED_VERSION} (the repository's module.json)`, initial.version === EXPECTED_VERSION, initial.version);
   const key = initial.newest;
 
   // ---- report windows ---------------------------------------------------------------------------------
