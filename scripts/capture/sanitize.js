@@ -13,6 +13,7 @@ export const CLOCK_SKEW_MS = 15 * 60 * 1000;
 const DOCUMENT_ID = /^[A-Za-z0-9]{16}$/;
 const SLUG = /^[a-z0-9][a-z0-9-]{0,47}$/;
 const TOKEN = /^[A-Za-z0-9][A-Za-z0-9.-]{0,79}$/;
+const ROW_KEY = /^[A-Za-z0-9][A-Za-z0-9:_-]{0,159}$/;
 const OUTCOMES = ["criticalSuccess", "success", "failure", "criticalFailure"];
 const MODES = ["roll", "publicroll", "gmroll", "blindroll", "selfroll"];
 const ROLL_TWICE = ["keep-higher", "keep-lower"];
@@ -73,6 +74,7 @@ export function sanitizeRecord(r) {
   const id = text(r.id, 160), msgId = idish(r.msgId), sessionKey = text(r.sessionKey, 40);
   if (!id || !msgId || !sessionKey || !Number.isFinite(r.ts)) return null;
   if (msgId.includes(":") || !id.startsWith(`${msgId}:`)) return null; // the store finds a record through the message id in front of its id
+  if (!ROW_KEY.test(id)) return null; // the id is a key on the stored page and a path segment in Foundry updates (same rule as codec.js isRowKey)
   const natural = r.natural === null || r.natural === undefined ? null : Number(r.natural);
   if (natural !== null && !isNatural(natural)) return null;
   /** @type {any} */

@@ -90,6 +90,28 @@ Regression on the dev instance with the hardened build (after `dev/backup.ps1`):
 | `npm test` script | `node --test test/` runs nothing on Node 22+ (found on 24.21); `node --test` runs the same 107 tests on 18.16 and 24.21 | fixed |
 | `playwright-core` 1.63.0 on Node 24 (2026-09-22) | lockfile still 2 entries, no install scripts, verified signature + provenance; policy tests 8/8; e2e smoke loads 1.1.1; `verify-hardening` 12/12; stored sessions identical | PASS |
 
+## 1.2.0 — resource pass (`dev/e2e/measure-resources.mjs`, node benchmark, 2026-09-22)
+Per-roll costs on the dev instance, 12 rolls 1.1 s apart, GM and PlayerA connected, PlayerA's window open:
+
+| What | Before | After |
+|---|---|---|
+| GM capture + upsert (`store.append`) | 0.1 ms | 0.1 ms |
+| GM journal write, round trip | 7.9 ms | 9.3 ms |
+| Update broadcast every client receives | 2 055 B for a 12-record page, growing with the page (≈ 80 KB at 300 dice) | **761 B, flat** |
+| Player decode + re-index | 0.10 ms | 0.10 ms |
+| Player re-render, Tonight tab | 2.7 ms | 2.6 ms |
+| Player re-render, Fun tab active | Monte Carlo ran per roll for a part that was not redrawn; the tab went stale | redrawn 300 ms after the last roll, Monte Carlo once per redraw |
+| GM re-render of an open report | Monte Carlo per render | memoized; 10.8 ms |
+
+Pure layer under node (`bench.mjs`, Node 24): capture 0.005 ms per message; page 268 B/record; History model 435 ms / 3.8 s / 10.4 s → **6 / 13 / 25 ms** for 1 / 3 / 5 years of weekly 200-dice evenings; page summary at the 5 000-record cap 104 → 1.3 ms; catch-up filter over 50 000 messages 120 → 1.2 ms; decode of all pages at load 19 / 56 / 99 ms; heap 643 B per record; Sessionizer 0.009 ms per call with 300 sessions; Monte Carlo (6 groups) 64 / 86 / 139 ms at 120 / 300 / 600 dice.
+
+| Item | Expected | Result |
+|---|---|---|
+| Binomial tails, new recurrence vs the old term-by-term sum | agreement over all k for n ≤ 400 and sampled k for n ≤ 3 000 at four values of p | PASS: worst difference 3e-12 (650 376 values) |
+| Identities at n = 50 000 | P(X ≥ k) + P(X ≤ k−1) = 1 | PASS |
+| `verify-m2` / `verify-m5` / `verify-hardening` on the keyed layout (deletions, moves, re-bucket rewrites) | all green | PASS 18/18, 16/16, 12/12 |
+| Planted v1 page (rows as an array, 40 rows, label) | loads; one `append` rewrites it keyed (v2) with 41 rows; reload matches; label kept; roll order; cleaned up | PASS |
+
 ## How to re-run
 ```
 node dev/e2e/foundry.mjs smoke                # module loads, versions, users
@@ -98,6 +120,7 @@ node dev/e2e/spikes.mjs s1|s2|s3|s4|s5|s6|s7  # individual spikes
 node dev/e2e/verify-m2.mjs                    # M2 acceptance; deletes all chat messages on the dev world
 node dev/e2e/verify-m5.mjs                    # 1.1 session definition + access control; run dev/backup.ps1 first (it re-buckets stored data)
 node dev/e2e/verify-hardening.mjs             # 1.1.1 report links, tabs, message time, export; cleans up after itself
+node dev/e2e/measure-resources.mjs [rolls]    # per-roll cost on GM and player, wire payload, render times; cleans up after itself
 npm ci                                        # two packages, install scripts off (.npmrc)
 npm test && npm run lint && npm run build:macro
 ```

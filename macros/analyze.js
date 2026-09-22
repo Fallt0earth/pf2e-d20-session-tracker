@@ -528,6 +528,7 @@ exports.CLOCK_SKEW_MS = 15 * 60 * 1000;
 const DOCUMENT_ID = /^[A-Za-z0-9]{16}$/;
 const SLUG = /^[a-z0-9][a-z0-9-]{0,47}$/;
 const TOKEN = /^[A-Za-z0-9][A-Za-z0-9.-]{0,79}$/;
+const ROW_KEY = /^[A-Za-z0-9][A-Za-z0-9:_-]{0,159}$/;
 const OUTCOMES = ["criticalSuccess", "success", "failure", "criticalFailure"];
 const MODES = ["roll", "publicroll", "gmroll", "blindroll", "selfroll"];
 const ROLL_TWICE = ["keep-higher", "keep-lower"];
@@ -570,6 +571,8 @@ function sanitizeRecord(r) {
     if (!id || !msgId || !sessionKey || !Number.isFinite(r.ts))
         return null;
     if (msgId.includes(":") || !id.startsWith(`${msgId}:`))
+        return null;
+    if (!ROW_KEY.test(id))
         return null;
     const natural = r.natural === null || r.natural === undefined ? null : Number(r.natural);
     if (natural !== null && !isNatural(natural))
@@ -924,6 +927,7 @@ exports.UNSCHEDULED = exports.DEFAULT_BOUNDARY_HOUR = exports.DEFAULT_TIMEZONE =
 exports.isValidTimezone = isValidTimezone;
 exports.wallClock = wallClock;
 exports.sessionKeyFor = sessionKeyFor;
+exports.dayWindow = dayWindow;
 exports.localDateKey = localDateKey;
 exports.isSessionKey = isSessionKey;
 exports.parseKey = parseKey;
@@ -971,6 +975,11 @@ function sessionKeyFor(ts, { timezone = exports.DEFAULT_TIMEZONE, boundaryHour =
     if (w.hour < boundaryHour)
         dayUtc -= DAY_MS;
     return isoDate(dayUtc);
+}
+function dayWindow(key) {
+    const [y, m, d] = parseKey(key).base.split("-").map(Number);
+    const day = Date.UTC(y, m - 1, d);
+    return { lo: day - 1.5 * DAY_MS, hi: day + 2.5 * DAY_MS };
 }
 function localDateKey(ts, timezone = exports.DEFAULT_TIMEZONE) {
     return sessionKeyFor(ts, { timezone, boundaryHour: 0 });
@@ -1115,20 +1124,56 @@ function binomialAtLeast(n, k, p) {
         return 1;
     if (k > n)
         return 0;
-    let s = 0;
-    for (let i = k; i <= n; i++)
-        s += binomialPmf(n, i, p);
-    return Math.min(1, s);
+    if (p <= 0)
+        return 0;
+    if (p >= 1)
+        return 1;
+    if (k <= mode(n, p))
+        return clamp(1 - sumOutwards(n, k - 1, p, -1));
+    return clamp(sumOutwards(n, k, p, +1));
 }
 function binomialAtMost(n, k, p) {
     if (k < 0)
         return 0;
     if (k >= n)
         return 1;
-    let s = 0;
-    for (let i = 0; i <= k; i++)
-        s += binomialPmf(n, i, p);
-    return Math.min(1, s);
+    if (p <= 0)
+        return 1;
+    if (p >= 1)
+        return 0;
+    if (k >= mode(n, p))
+        return clamp(1 - sumOutwards(n, k + 1, p, +1));
+    return clamp(sumOutwards(n, k, p, -1));
+}
+function mode(n, p) {
+    return Math.floor((n + 1) * p);
+}
+function sumOutwards(n, k, p, direction) {
+    let term = binomialPmf(n, k, p);
+    if (term === 0)
+        return 0;
+    const q = 1 - p;
+    let s = term;
+    if (direction > 0) {
+        for (let i = k; i < n; i++) {
+            term *= ((n - i) / (i + 1)) * (p / q);
+            s += term;
+            if (term < s * 1e-17)
+                break;
+        }
+    }
+    else {
+        for (let i = k; i > 0; i--) {
+            term *= (i / (n - i + 1)) * (q / p);
+            s += term;
+            if (term < s * 1e-17)
+                break;
+        }
+    }
+    return s;
+}
+function clamp(x) {
+    return x < 0 ? 0 : x > 1 ? 1 : x;
 }
 },
 "scripts/stats/basic.js": function (require, module, exports) {

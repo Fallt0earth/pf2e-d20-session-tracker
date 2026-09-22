@@ -23,7 +23,7 @@ const summary = (page) => evaluate(page, `(() => {
            rerolls: recs.filter(r => r.isReroll).map(r => ({ id: r.id, natural: r.natural, kept: r.kept, rerollOf: r.rerollOf ?? null, source: r.source })),
            rerolledAway: recs.filter(r => r.rerolledBy).map(r => ({ id: r.id, natural: r.natural, kept: r.kept, rerollOutcome: r.rerollOutcome })),
            toolbelt: recs.filter(r => r.source === "toolbelt").map(r => ({ id: r.id, natural: r.natural, userId: r.userId, actorId: r.actorId, alias: r.alias, outcome: r.outcome, dc: r.dc })),
-           journalPresent: !!journal, pagePresent: !!pg, pageRows: pg?.flags["${MODULE_ID}"]?.data?.rows?.length ?? null, pageBytes: pg ? JSON.stringify(pg.flags["${MODULE_ID}"]).length : null };
+           journalPresent: !!journal, pagePresent: !!pg, pageRows: (r => Array.isArray(r) ? r.length : r ? Object.keys(r).length : null)(pg?.flags["${MODULE_ID}"]?.data?.rows), pageBytes: pg ? JSON.stringify(pg.flags["${MODULE_ID}"]).length : null };
 })()`);
 
 const gm = await openSession({ user: "Gamemaster" });

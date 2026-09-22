@@ -18,6 +18,7 @@ Luck is the natural die only. Totals and outcomes mix in modifiers and DCs, so t
   - *Start / End buttons*: the GM marks sessions by hand; stray rolls are kept aside as unscheduled.
   - Changed your mind? *Re-apply to stored history* regroups every stored roll (each keeps its raw timestamp), after showing what would move. Merge and split tools cover the odd case.
 - Players read the same journal; the window filters blind and secret rolls out of their view for the running session (configurable). The GM decides what players may open with the **Players see** control in the tracker header: the whole table, only their own rolls, or nothing. It takes effect at once on every client, no reload.
+- It is light: capturing a message costs microseconds, a roll travels to each client as one key of under 1 KB, an open window redraws once per burst of rolls, and five years of weekly play load in a tenth of a second (numbers in `docs/TESTING.md`).
 - If the GM reloads or the server restarts mid-evening, a catch-up scans tonight's chat for anything missed. Deleting the chat log does not affect stored evenings.
 
 ## Install

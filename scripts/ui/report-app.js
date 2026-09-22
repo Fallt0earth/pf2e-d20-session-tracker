@@ -10,6 +10,7 @@ import { viewOptionsFor } from "./view-options.js";
 import { decorateRow, partySentence } from "./tonight-decorate.js";
 import { decorateFunGroup, decorateAwards } from "./fun-decorate.js";
 import { postReportLink } from "./report-link.js";
+import { RENDER_DELAY_MS } from "./tracker-app.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -33,6 +34,28 @@ export class ReportApp extends HandlebarsApplicationMixin(ApplicationV2) {
     super({ ...options, id: `pf2e-d20-report-${String(options.sessionKey).replace(/[^A-Za-z0-9-]/g, "_")}` }); // an element id: "~" and the like become "_"
     this.source = options.source;
     this.sessionKey = options.sessionKey;
+    this.funCache = { key: null, value: null };
+    this.renderTimer = null;
+  }
+
+  /** The data changed: redraw once the burst is over (same delay as the tracker window). */
+  notify() {
+    if (!this.rendered) return;
+    clearTimeout(this.renderTimer);
+    this.renderTimer = setTimeout(() => { if (this.rendered) this.render(); }, RENDER_DELAY_MS);
+  }
+
+  async close(options) {
+    clearTimeout(this.renderTimer);
+    return super.close(options);
+  }
+
+  /** The Monte Carlo is the one expensive part of the report: keyed by what can change its result. */
+  _funModel(records, opts) {
+    const iterations = Math.min(getSetting(SETTINGS.mcIterations), 5000);
+    const sig = JSON.stringify([this.sessionKey, records.length, records.at(-1)?.id, opts.countMode, opts.groupBy, opts.includeGM, opts.includeRaw, opts.viewer.userId, iterations]);
+    if (this.funCache.key !== sig) this.funCache = { key: sig, value: buildFunModel(records, opts, { iterations, seed: this.sessionKey }) };
+    return this.funCache.value;
   }
 
   get title() {
@@ -44,7 +67,7 @@ export class ReportApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const opts = viewOptionsFor(this.source);
     const records = this.source.getSession(this.sessionKey);
     const tonight = buildSessionModel(records, opts);
-    const fun = buildFunModel(records, opts, { iterations: Math.min(getSetting(SETTINGS.mcIterations), 5000), seed: this.sessionKey });
+    const fun = this._funModel(records, opts);
     const byId = new Map([...fun.groups.map((g) => [g.id, g]), ["party", fun.party]]);
     const party = decorateRow(tonight.party);
     const partyFun = decorateFunGroup(fun.party);

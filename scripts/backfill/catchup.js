@@ -3,7 +3,7 @@
 // event "backfill", one shared Sessionizer for the batch. Whole-history backfill is post-1.0.
 import { messageToRollRecords } from "../capture/normalize.js";
 import { captureContext } from "../capture/live.js";
-import { sessionKeyFor } from "../sessions/bucket.js";
+import { sessionKeyFor, dayWindow } from "../sessions/bucket.js";
 
 const HOUR = 3_600_000;
 
@@ -20,7 +20,8 @@ export function catchUpWindow(store, { key } = {}) {
   const now = Date.now();
   if (cfg.mode === "daily") {
     const target = key ?? sessionKeyFor(now, cfg);
-    return { target, filter: (m) => sessionKeyFor(m.timestamp, cfg) === target };
+    const { lo, hi } = dayWindow(target);
+    return { target, filter: (m) => m.timestamp >= lo && m.timestamp <= hi && sessionKeyFor(m.timestamp, cfg) === target };
   }
   const gapMs = cfg.gapHours * HOUR;
   const target = key ?? store.currentKey();

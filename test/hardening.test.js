@@ -11,7 +11,7 @@ import { parseFlatCheckContent } from "../scripts/capture/extractors/flat-check.
 import { groupSummary } from "../scripts/stats/summarize.js";
 import { buildSessionModel } from "../scripts/ui/view-model.js";
 import { recordsToCsv } from "../scripts/storage/csv.js";
-import { decode, encode, FIELDS } from "../scripts/storage/codec.js";
+import { decode, encode, isRowKey, FIELDS } from "../scripts/storage/codec.js";
 import { mergeRecord } from "../scripts/storage/merge.js";
 import { isSessionKey } from "../scripts/sessions/bucket.js";
 
@@ -247,12 +247,17 @@ test("CSV text cells that a spreadsheet would run as a formula open as text; num
 
 test("a stored page header only names stored fields", () => {
   const packed = encode([storedOriginal(PLAYER_A)]);
-  const tampered = { ...packed, fields: [...FIELDS, "__proto__", "sessionKey"], rows: packed.rows.map((row) => [...row, { polluted: true }, "1999-01-01"]) };
+  const tampered = { ...packed, fields: [...FIELDS, "__proto__", "sessionKey"], rows: Object.fromEntries(Object.entries(packed.rows).map(([id, row]) => [id, [...row, { polluted: true }, "1999-01-01"]])) };
   const [r] = decode(tampered, "2026-09-15");
   assert.equal(r.sessionKey, "2026-09-15");
   assert.equal(/** @type {any} */ (r).polluted, undefined);
   assert.equal(Object.getPrototypeOf(r), Object.prototype);
-  assert.deepEqual(decode({ rows: ["not a row", null] }, "2026-09-15").length, 2);
+  assert.deepEqual(decode({ rows: ["not a row", null] }, "2026-09-15").length, 2, "v1 pages: rows as an array");
+  assert.deepEqual(decode({ v: 2, rows: { a: "not a row", b: null } }, "2026-09-15").length, 2);
+  // A record id becomes a key on the page and a path segment in a Foundry update: dots and deletion syntax never get that far.
+  for (const id of ["m1:r0:t0:d0", "dmgMSG0000000001:tb:null:wziVXf0HEBZFqNCA:0", "x:html:1"]) assert.ok(isRowKey(id), id);
+  for (const id of ["a.b:r0", "-=m1:r0", "", "m1:r0:t0:d0".padEnd(200, "0"), "m1 r0", "m1/r0"]) assert.equal(isRowKey(id), false, id);
+  assert.equal(sanitizeRecord({ ...storedOriginal(PLAYER_A), id: `${MSG_OLD}:r0.t0:d0` }), null, "the sanitizer applies the same rule");
 });
 
 test("a stored record's die, time and certain roller are settled; a guess may become certain", () => {

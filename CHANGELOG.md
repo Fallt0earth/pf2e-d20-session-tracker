@@ -2,8 +2,13 @@
 
 All notable changes to this module. Versions are never reused.
 
-## [1.2.0] — unreleased
-Toolchain baseline release; the module's shipped files are the same as 1.1.1.
+## [1.2.0] — 2026-09-22
+Resource pass and toolchain baseline. Stored data opens unchanged; pages move to the new layout on their next write.
+- **History tab: seconds to milliseconds.** The all-time Nat 20 / Nat 1 tails were computed with a quadratic sum, which cost 0.4 s after a year of play and 10 s after five, on every roll while the tab was open. Now 6–25 ms, with the same numbers to twelve decimals.
+- **One roll is under 1 KB on the wire.** Every roll used to send the whole session page to every connected client (about 80 KB at 300 dice). Rows are now keyed by id in the journal page, so a roll travels as one key: 761 bytes, whatever the page size.
+- **Fewer, cheaper redraws.** An open window redraws once, 300 ms after the last roll of a burst; the Fun tab's Monte Carlo and the History model run only when that tab is actually drawn, and the tab you are watching stays current instead of going stale; the report popup no longer reruns its Monte Carlo on every refresh.
+- **GM start with a big chat log:** the catch-up no longer runs a timezone conversion on every message in the world (120 ms per 50 000 messages → 1 ms).
+- Measured budget and what was left alone (capture 5 µs per message, 643 B of memory per stored die, load time 0.1 s for five years of play): docs/TESTING.md.
 - **Node 24 LTS is the development baseline** (`engines.node >=24`, enforced by `engine-strict` in `.npmrc`, so `npm ci` refuses an older Node instead of warning). The dependency policy's release-age cooldown relies on npm 11, which ships with Node 24; on the npm of older lines it would silently do nothing.
 - Dev tooling: `playwright-core` 1.55.1 → 1.63.0 (the 1.55 line was the last one for Node 18).
 

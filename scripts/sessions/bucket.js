@@ -59,6 +59,19 @@ export function sessionKeyFor(ts, { timezone = DEFAULT_TIMEZONE, boundaryHour = 
   return isoDate(dayUtc);
 }
 
+/**
+ * A cheap timestamp window that surely contains every message of a daily key, whatever the timezone
+ * and boundary hour: filter on it before calling sessionKeyFor on each message (Intl is ~2 µs a call;
+ * a comparison is nothing, and a world can hold tens of thousands of messages).
+ * @param {string} key   `YYYY-MM-DD` (a `~N` suffix is ignored)
+ * @returns {{ lo: number, hi: number }}
+ */
+export function dayWindow(key) {
+  const [y, m, d] = parseKey(key).base.split("-").map(Number);
+  const day = Date.UTC(y, m - 1, d);
+  return { lo: day - 1.5 * DAY_MS, hi: day + 2.5 * DAY_MS };
+}
+
 /** Plain local calendar date of a timestamp (no boundary shift). */
 export function localDateKey(ts, timezone = DEFAULT_TIMEZONE) {
   return sessionKeyFor(ts, { timezone, boundaryHour: 0 });

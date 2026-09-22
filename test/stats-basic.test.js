@@ -85,3 +85,16 @@ test("luck: sample-size guards", () => {
   assert.equal(zBand(0.5), "noise");
   assert.equal(zBand(-1.5), "cold");
 });
+
+test("binomial tails stay exact and cheap over years of dice (the History tab sums all-time counts)", () => {
+  // The old term-by-term sum agrees with the recurrence: identities that must hold at any n.
+  for (const [n, k] of [[22, 3], [400, 25], [5000, 260], [50000, 2500], [50000, 2650]]) {
+    close(binomialAtLeast(n, k, 0.05) + binomialAtMost(n, k - 1, 0.05), 1, 1e-9, `P(X≥k)+P(X≤k−1) at n=${n}`);
+  }
+  close(binomialAtLeast(400, 25, 0.05), 0.15102194, 1e-6, "25 or more twenties in 400 rolls (the term-by-term sum this replaced gave 0.15102194)");
+  assert.ok(binomialAtLeast(50000, 2700, 0.05) < 1e-4 && binomialAtLeast(50000, 2700, 0.05) > 1e-6, "a +200 excess over 50 000 rolls is rare, not impossible");
+  assert.equal(binomialAtMost(50000, 0, 0.05), 0, "no twenty in 50 000 rolls: below the double floor, so zero");
+  const t = performance.now();
+  for (let i = 0; i < 200; i++) { binomialAtLeast(50000, 2400 + i, 0.05); binomialAtMost(50000, 2600 - i, 0.05); }
+  assert.ok(performance.now() - t < 500, `400 all-time tails took ${Math.round(performance.now() - t)} ms`);
+});

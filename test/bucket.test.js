@@ -50,3 +50,22 @@ test("labels and ordering", () => {
   assert.equal(sessionLabel("2026-09-13"), "2026-09-13 Sun");
   assert.deepEqual(["2026-09-13", "2026-08-30", "2026-09-01"].sort(compareKeys), ["2026-08-30", "2026-09-01", "2026-09-13"]);
 });
+
+test("dayWindow: a cheap bound that holds every message of a daily key in any timezone", async () => {
+  const { dayWindow } = await import("../scripts/sessions/bucket.js");
+  const { sessionKeyFor: keyFor } = await import("../scripts/sessions/bucket.js");
+  for (const timezone of ["Pacific/Kiritimati", "America/Chicago", "Pacific/Pago_Pago", "UTC"]) {
+    for (const boundaryHour of [0, 6, 23]) {
+      const cfg = { timezone, boundaryHour };
+      for (const key of ["2026-09-19", "2026-03-08", "2026-11-01"]) {
+        const { lo, hi } = dayWindow(key);
+        const day = Date.UTC(...key.split("-").map((x, i) => Number(x) - (i === 1 ? 1 : 0)));
+        // Every timestamp with that key within ±3 days of the date lies inside the window.
+        for (let ts = day - 3 * 86_400_000; ts <= day + 3 * 86_400_000; ts += 15 * 60_000) {
+          if (keyFor(ts, cfg) === key) assert.ok(ts >= lo && ts <= hi, `${key} ${timezone} boundary ${boundaryHour}: ${new Date(ts).toISOString()} outside the window`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(dayWindow("2026-09-19~2"), dayWindow("2026-09-19"));
+});

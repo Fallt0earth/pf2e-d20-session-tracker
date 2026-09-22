@@ -1,4 +1,4 @@
-// 1.1.1 end-to-end verification on the dev instance: the Foundry-facing side of the hardening.
+// End-to-end verification on the dev instance (1.1.1 hardening, kept current since): the Foundry-facing side of the hardening.
 //   node dev/e2e/verify-hardening.mjs
 // The pure-layer rules are unit-tested (test/hardening.test.js); this run checks what only a live world
 // can show: report windows and links, every tab still rendering, a player's far-off timestamp being

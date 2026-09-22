@@ -14,6 +14,8 @@ import { dailyExample, boundaryForUsualStart } from "../sessions/sessionizer.js"
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const T = (name) => `modules/${MODULE_ID}/templates/tracker/${name}.hbs`;
+/** How long after the last data change an open window redraws (bursts of rolls become one render). */
+export const RENDER_DELAY_MS = 300;
 
 export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -79,6 +81,8 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.expanded = new Set();
     this.showAll = false;
     this.funCache = { key: null, value: null };
+    this.pendingParts = new Set();
+    this.renderTimer = null;
   }
 
   /** Fun model for the selected session, memoized by session, record count and view options. */
@@ -101,11 +105,30 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return value;
   }
 
-  /** Re-render if this session (or any, when null) is what is displayed. */
+  /**
+   * The data changed: re-render what shows it, once the burst is over. Rolls arrive in bursts
+   * (initiative for a whole encounter, "Roll NPC Saves"), so the parts to redraw are collected and
+   * drawn together RENDER_DELAY_MS after the last change. The active tab is included, so a Fun or
+   * History tab that is being watched stays current; the others cost nothing until they are opened.
+   */
   notify(sessionKey = null) {
     if (!this.rendered) return;
-    if (sessionKey && this.sessionKey && sessionKey !== this.sessionKey) return this.render({ parts: ["header", "sessions"] });
-    return this.render({ parts: ["header", "tonight", "sessions"] });
+    const mine = !sessionKey || !this.sessionKey || sessionKey === this.sessionKey;
+    for (const p of mine ? ["header", "tonight", "sessions"] : ["header", "sessions"]) this.pendingParts.add(p);
+    const active = this.tabGroups.primary;
+    if (mine && (active === "fun" || active === "history")) this.pendingParts.add(active);
+    clearTimeout(this.renderTimer);
+    this.renderTimer = setTimeout(() => {
+      const parts = [...this.pendingParts];
+      this.pendingParts.clear();
+      if (this.rendered) this.render({ parts });
+    }, RENDER_DELAY_MS);
+  }
+
+  async close(options) {
+    clearTimeout(this.renderTimer);
+    this.pendingParts.clear();
+    return super.close(options);
   }
 
   _viewOptions() {
@@ -160,8 +183,11 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const records = this.source.getSession(this.sessionKey);
     const model = buildSessionModel(records, opts);
     const activeTab = this.tabGroups.primary ?? TrackerApp.TABS.primary.initial;
-    context.fun = activeTab === "fun" ? this._funModel(records, opts) : { empty: true, deferred: true };
-    context.history = activeTab === "history" ? this._historyModel(opts) : { empty: true, deferred: true };
+    // The Fun model runs the Monte Carlo and History walks every stored evening: only when that part
+    // is being drawn now (a partial render of the other parts never pays for them).
+    const drawing = (part) => !options.parts || options.parts.includes(part);
+    context.fun = activeTab === "fun" && drawing("fun") ? this._funModel(records, opts) : { empty: true, deferred: true };
+    context.history = activeTab === "history" && drawing("history") ? this._historyModel(opts) : { empty: true, deferred: true };
     const current = this.source.currentKey();
     const hasTargets = this.source.listSessions().some((s) => !s.unscheduled);
     Object.assign(context, {

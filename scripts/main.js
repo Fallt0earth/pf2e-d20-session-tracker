@@ -68,7 +68,7 @@ function onSettingsChanged() {
 
 /** Open report popups follow the data like the main window does. */
 function notifyReports(key) {
-  for (const [k, report] of reports) if (report.rendered && (!key || k === key)) report.render();
+  for (const [k, report] of reports) if (report.rendered && (!key || k === key)) report.notify();
 }
 
 Hooks.once("init", () => {
