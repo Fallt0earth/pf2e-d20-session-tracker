@@ -6,7 +6,7 @@ import { buildSessionModel } from "./ui/view-model.js";
 import { viewOptionsFor } from "./ui/view-options.js";
 import { bucketOptions } from "./settings.js";
 
-export function buildApi({ open, openReport, close, getSource, catchUp }) {
+export function buildApi({ open, openReport, close, getSource, catchUp, openBackfill, backfill }) {
   return Object.freeze({
     open,
     /** Open the evening report popup on this client (never posts to chat). */
@@ -18,6 +18,9 @@ export function buildApi({ open, openReport, close, getSource, catchUp }) {
     listSessions: () => getSource()?.listSessions() ?? [],
     getSession: (key) => getSource()?.getSession(key) ?? [],
     catchUp,
+    /** GM: the whole-history backfill dialog, and the same through code ({ from, to, minRolls, requireGM, dryRun, keys }). */
+    openBackfill,
+    backfill,
     /** Session model for this viewer; access rules always come from the world settings. */
     summarize: (key, overrides) => buildSessionModel(getSource()?.getSession(key) ?? [], viewOptionsFor(getSource(), overrides)),
     normalize: messageToRollRecords,

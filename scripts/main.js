@@ -8,6 +8,8 @@ import { registerRollerEnrichment } from "./capture/roller-enrich.js";
 import { catchUp } from "./backfill/catchup.js";
 import { TrackerApp } from "./ui/tracker-app.js";
 import { ReportApp } from "./ui/report-app.js";
+import { BackfillApp } from "./ui/backfill-app.js";
+import { backfillPlan, backfillRun } from "./backfill/backfill.js";
 import { registerReportLinks } from "./ui/report-link.js";
 import { registerEntryPoints, canOpen } from "./ui/entry.js";
 import { buildApi } from "./api.js";
@@ -15,6 +17,7 @@ import { isSessionKey } from "./sessions/bucket.js";
 
 let store = null;
 let app = null;
+let backfillApp = null;
 const reports = new Map();
 
 /** The evening report popup: opens only on an explicit click (button, chat link, or this API). */
@@ -28,6 +31,31 @@ function openReport(sessionKey) {
   if (!report) { report = new ReportApp({ source: store, sessionKey: key }); reports.set(key, report); }
   report.render({ force: true });
   return report;
+}
+
+/** The whole-history backfill dialog: GM only, one instance. */
+function openBackfill() {
+  if (!game.user.isGM) return null;
+  if (!store.loaded) store.load();
+  backfillApp ??= new BackfillApp({ source: store });
+  backfillApp.render({ force: true });
+  return backfillApp;
+}
+
+/**
+ * Backfill through the API (macros, the console, the e2e harness). `dryRun` returns the plan without
+ * writing; otherwise the ticked evenings are added (or exactly `keys`, when given).
+ * @param {{ from?: string|number, to?: string|number, minRolls?: number, requireGM?: boolean, dryRun?: boolean, keys?: string[] }} [opts]
+ */
+async function backfill(opts = {}) {
+  if (!game.user.isGM) return null;
+  if (!store.loaded) store.load();
+  const plan = await backfillPlan(store, opts);
+  const summary = { scanned: plan.scanned, total: plan.total, skipped: plan.skipped, sessions: plan.sessions.map(({ records, ...s }) => ({ ...s, records: records.length })) };
+  if (opts.dryRun) return summary;
+  const keys = opts.keys ?? plan.sessions.filter((s) => s.selected).map((s) => s.key);
+  const result = await backfillRun(store, plan, keys);
+  return { ...summary, added: result.added, written: result.keys };
 }
 
 function open() {
@@ -58,6 +86,7 @@ function onSettingsChanged() {
   if (!game.ready) return;
   if (!canOpen()) {
     app?.close();
+    backfillApp?.close();
     for (const report of reports.values()) if (report.rendered) report.close();
   } else {
     app?.notify();
@@ -85,6 +114,8 @@ Hooks.once("init", () => {
     close: () => app?.close(),
     getSource: () => store,
     catchUp: (opts) => catchUp(store, opts),
+    openBackfill,
+    backfill,
   });
   console.log(`${MODULE_TITLE} | init v${game.modules.get(MODULE_ID)?.version ?? "?"}`);
 });

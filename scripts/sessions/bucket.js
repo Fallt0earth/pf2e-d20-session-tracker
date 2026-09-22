@@ -72,6 +72,24 @@ export function dayWindow(key) {
   return { lo: day - 1.5 * DAY_MS, hi: day + 2.5 * DAY_MS };
 }
 
+/**
+ * The instant a calendar date begins in `timezone` (00:00 local), for turning a date picked in a
+ * form into a timestamp bound. Intl only converts instants to wall clocks, so the offset is read off
+ * the wall clock at noon UTC of that date and applied; on a DST switch day the answer can be an hour
+ * off, which is fine for a range bound.
+ * @param {string} dateKey   `YYYY-MM-DD`
+ * @param {string} [timezone]
+ * @returns {number|null}   null when the key is not a date
+ */
+export function localMidnight(dateKey, timezone = DEFAULT_TIMEZONE) {
+  const [y, m, d] = String(dateKey).split("-").map(Number);
+  if (!y || !m || !d) return null;
+  const noon = Date.UTC(y, m - 1, d, 12);
+  const w = wallClock(noon, timezone);
+  const offset = Date.UTC(w.year, w.month - 1, w.day, w.hour, w.minute) - noon;
+  return Date.UTC(y, m - 1, d) - offset;
+}
+
 /** Plain local calendar date of a timestamp (no boundary shift). */
 export function localDateKey(ts, timezone = DEFAULT_TIMEZONE) {
   return sessionKeyFor(ts, { timezone, boundaryHour: 0 });

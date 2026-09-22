@@ -1,0 +1,72 @@
+<div class="backfill-body">
+  {{#if isForm}}
+    <p class="help">{{localize "PF2E-D20.Backfill.Intro"}}</p>
+    {{#if inputs.manual}}<p class="def-preview"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "PF2E-D20.Backfill.ManualNote"}}</p>{{/if}}
+    <div class="def-row">
+      <label>{{localize "PF2E-D20.Backfill.From"}} <input type="date" name="from" value="{{inputs.from}}"></label>
+      <label>{{localize "PF2E-D20.Backfill.To"}} <input type="date" name="to" value="{{inputs.to}}"></label>
+    </div>
+    <div class="def-row">
+      <label title="{{localize "PF2E-D20.Backfill.MinRollsHint"}}">{{localize "PF2E-D20.Backfill.MinRolls"}} <input type="number" name="minRolls" min="0" max="500" step="1" value="{{inputs.minRolls}}"></label>
+      <label title="{{localize "PF2E-D20.Backfill.RequireGMHint"}}"><input type="checkbox" name="requireGM" {{#if inputs.requireGM}}checked{{/if}}> {{localize "PF2E-D20.Backfill.RequireGM"}}</label>
+    </div>
+    <p class="def-preview"><i class="fa-solid fa-circle-info"></i> {{localize "PF2E-D20.Backfill.WorldNote" messages=inputs.messages tz=inputs.timezone}}</p>
+    <div class="actions">
+      <button type="button" class="pill active" data-action="preview"><i class="fa-solid fa-magnifying-glass"></i> {{localize "PF2E-D20.Backfill.Preview"}}</button>
+    </div>
+  {{/if}}
+
+  {{#if isBusy}}
+    <p class="progress-label">{{progress.label}}</p>
+    <progress class="backfill-progress" max="{{progress.total}}" value="{{progress.done}}"></progress>
+  {{/if}}
+
+  {{#if isPreview}}
+    {{#if plan.empty}}
+      <p class="empty">{{localize "PF2E-D20.Backfill.Nothing" scanned=plan.scanned skipped=plan.skipped}}</p>
+    {{else}}
+      <p class="party-sentence">{{localize "PF2E-D20.Backfill.Summary" total=plan.total sessions=plan.count scanned=plan.scanned skipped=plan.skipped}}</p>
+      <p class="help">{{localize "PF2E-D20.Backfill.TickHint"}}</p>
+      <div class="actions">
+        <button type="button" class="pill" data-action="tickAll" data-value="1">{{localize "PF2E-D20.Backfill.All"}}</button>
+        <button type="button" class="pill" data-action="tickAll" data-value="0">{{localize "PF2E-D20.Backfill.None"}}</button>
+      </div>
+      <table class="sessions-list backfill-list">
+        <thead><tr>
+          <th></th>
+          <th class="who">{{localize "PF2E-D20.Backfill.Evening"}}</th>
+          <th>{{localize "PF2E-D20.Tonight.Rolls"}}</th>
+          <th>{{localize "PF2E-D20.Backfill.Players"}}</th>
+          <th title="{{localize "PF2E-D20.Backfill.GMHint"}}">{{localize "PF2E-D20.Backfill.GM"}}</th>
+          <th title="{{localize "PF2E-D20.Backfill.StoredHint"}}">{{localize "PF2E-D20.Backfill.Stored"}}</th>
+          <th>{{localize "PF2E-D20.Backfill.Time"}}</th>
+        </tr></thead>
+        <tbody>
+          {{#each plan.sessions}}
+            <tr class="{{#unless this.selected}}excluded{{/unless}}">
+              <td><input type="checkbox" name="pick" value="{{this.key}}" {{#if this.selected}}checked{{/if}}></td>
+              <td class="who"><b>{{this.label}}</b>{{#if this.why}}<small>{{this.why}}</small>{{/if}}</td>
+              <td>{{this.n}}</td>
+              <td>{{this.players}}</td>
+              <td>{{#if this.gmPresent}}<i class="fa-solid fa-check"></i>{{else}}<i class="fa-solid fa-minus"></i>{{/if}}</td>
+              <td>{{#if this.existing}}{{this.existing}}{{else}}–{{/if}}</td>
+              <td>{{this.first}}–{{this.last}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{/if}}
+    <div class="actions">
+      <button type="button" class="pill" data-action="back"><i class="fa-solid fa-arrow-left"></i> {{localize "PF2E-D20.Backfill.Back"}}</button>
+      {{#unless plan.empty}}<button type="button" class="pill active" data-action="run"><i class="fa-solid fa-clock-rotate-left"></i> {{localize "PF2E-D20.Backfill.Add"}}</button>{{/unless}}
+    </div>
+  {{/if}}
+
+  {{#if isDone}}
+    <p class="party-sentence">{{localize "PF2E-D20.Backfill.Done" added=result.added sessions=result.sessions}}</p>
+    <div class="actions">
+      <button type="button" class="pill" data-action="back">{{localize "PF2E-D20.Backfill.Again"}}</button>
+      <button type="button" class="pill active" data-action="finish">{{localize "PF2E-D20.Backfill.Close"}}</button>
+    </div>
+  {{/if}}
+</div>

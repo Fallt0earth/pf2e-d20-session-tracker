@@ -30,6 +30,7 @@
     <div class="sessions-toolbar">
       {{#if isGM}}
         <button type="button" class="pill" data-action="catchUp" title="{{localize "PF2E-D20.Sessions.CatchUpHint"}}"><i class="fa-solid fa-clock-rotate-left"></i> {{localize "PF2E-D20.Controls.CatchUp"}}</button>
+        <button type="button" class="pill" data-action="backfill" title="{{localize "PF2E-D20.Backfill.ButtonHint"}}"><i class="fa-solid fa-book-open"></i> {{localize "PF2E-D20.Backfill.Button"}}</button>
         <button type="button" class="pill danger" data-action="resetAll"><i class="fa-solid fa-trash"></i> {{localize "PF2E-D20.Sessions.ResetAll"}}</button>
       {{/if}}
       <button type="button" class="pill" data-action="exportAll" data-format="csv" title="{{localize "PF2E-D20.Export.AllHint"}}"><i class="fa-solid fa-file-csv"></i> {{localize "PF2E-D20.Export.All"}}</button>

@@ -2,6 +2,9 @@
 
 All notable changes to this module. Versions are never reused.
 
+## [1.3.0] — 2026-09-22
+- **Backfill history** (Sessions tab, GM): read the world's past chat log and add every evening of play it still holds. Pick a date range, preview what each evening would gain (rolls, players, whether a GM wrote anything, what is already stored), untick the evenings that were not games, and add the rest with a progress bar. It uses the same normaliser as live capture, buckets under the current session definition, skips rolls already stored, never deletes, and a second run adds nothing. Evenings with fewer rolls than the "minimum rolls to list" setting, or without a GM message, are listed but unticked by default. Also through the API: `api.backfill({ from, to, minRolls, requireGM, dryRun, keys })`.
+
 ## [1.2.0] — 2026-09-22
 Resource pass and toolchain baseline. Stored data opens unchanged; pages move to the new layout on their next write.
 - **History tab: seconds to milliseconds.** The all-time Nat 20 / Nat 1 tails were computed with a quadratic sum, which cost 0.4 s after a year of play and 10 s after five, on every roll while the tab was open. Now 6–25 ms, with the same numbers to twelve decimals.

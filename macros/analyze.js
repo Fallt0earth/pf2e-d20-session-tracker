@@ -928,6 +928,7 @@ exports.isValidTimezone = isValidTimezone;
 exports.wallClock = wallClock;
 exports.sessionKeyFor = sessionKeyFor;
 exports.dayWindow = dayWindow;
+exports.localMidnight = localMidnight;
 exports.localDateKey = localDateKey;
 exports.isSessionKey = isSessionKey;
 exports.parseKey = parseKey;
@@ -980,6 +981,15 @@ function dayWindow(key) {
     const [y, m, d] = parseKey(key).base.split("-").map(Number);
     const day = Date.UTC(y, m - 1, d);
     return { lo: day - 1.5 * DAY_MS, hi: day + 2.5 * DAY_MS };
+}
+function localMidnight(dateKey, timezone = exports.DEFAULT_TIMEZONE) {
+    const [y, m, d] = String(dateKey).split("-").map(Number);
+    if (!y || !m || !d)
+        return null;
+    const noon = Date.UTC(y, m - 1, d, 12);
+    const w = wallClock(noon, timezone);
+    const offset = Date.UTC(w.year, w.month - 1, w.day, w.hour, w.minute) - noon;
+    return Date.UTC(y, m - 1, d) - offset;
 }
 function localDateKey(ts, timezone = exports.DEFAULT_TIMEZONE) {
     return sessionKeyFor(ts, { timezone, boundaryHour: 0 });

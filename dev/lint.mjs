@@ -23,7 +23,7 @@ const PURE = [
   "scripts/capture/html-scan.js", "scripts/capture/sanitize.js", "scripts/sessions/bucket.js",
   "scripts/sessions/sessionizer.js", "scripts/ui/view-model.js", "scripts/ui/fun-model.js",
   "scripts/ui/history-model.js", "scripts/storage/codec.js", "scripts/storage/csv.js",
-  "scripts/storage/merge.js", "scripts/util/queue.js",
+  "scripts/storage/merge.js", "scripts/util/queue.js", "scripts/backfill/plan.js",
 ];
 const IGNORED = ["dev/reference/", "dev/lint/"];
 

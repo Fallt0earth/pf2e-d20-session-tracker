@@ -112,6 +112,19 @@ Pure layer under node (`bench.mjs`, Node 24): capture 0.005 ms per message; page
 | `verify-m2` / `verify-m5` / `verify-hardening` on the keyed layout (deletions, moves, re-bucket rewrites) | all green | PASS 18/18, 16/16, 12/12 |
 | Planted v1 page (rows as an array, 40 rows, label) | loads; one `append` rewrites it keyed (v2) with 41 rows; reload matches; label kept; roll order; cleaned up | PASS |
 
+## 1.3.0 — whole-history backfill (`dev/e2e/verify-backfill.mjs`, 2026-09-22: 16/16)
+| Item | How it is produced | Expected | Result |
+|---|---|---|---|
+| Planted history | 149 dated messages in Feb 2026 (3 Saturday evenings GM + 2 players, a sheet-testing Tuesday, a players-only Saturday), capture paused meanwhile | created with 3 authors | PASS |
+| Dry run | `api.backfill({ from, to, dryRun: true })` | five evenings in order; 36 rolls / 3 players / GM / ticked for the real ones; 4 rolls no GM and 34 rolls no GM listed but unticked; nothing stored | PASS |
+| Knobs | `minRolls: 0, requireGM: false` | every evening ticked | PASS |
+| One-day range | from = to = 2026-02-14 | that evening only, 37 messages scanned | PASS |
+| Run | `api.backfill({ from, to })` | 108 rolls added to three pages; records carry user, die, key | PASS |
+| Idempotence | run again | added 0, skipped 108, only the unticked evenings listed | PASS |
+| By name | `keys: ["2026-02-28"]` | the players-only evening added, the sheet-testing day still out | PASS |
+| Dialog | `api.openBackfill()`, fill, Preview, tick none, tick all, Add, Close | prefilled range and threshold; preview lists what is left; adds 4 rolls; reports; closes | PASS |
+| Cleanup | delete test evenings and messages | stored sessions identical to the start; no module errors | PASS |
+
 ## How to re-run
 ```
 node dev/e2e/foundry.mjs smoke                # module loads, versions, users
@@ -121,6 +134,7 @@ node dev/e2e/verify-m2.mjs                    # M2 acceptance; deletes all chat 
 node dev/e2e/verify-m5.mjs                    # 1.1 session definition + access control; run dev/backup.ps1 first (it re-buckets stored data)
 node dev/e2e/verify-hardening.mjs             # 1.1.1 report links, tabs, message time, export; cleans up after itself
 node dev/e2e/measure-resources.mjs [rolls]    # per-roll cost on GM and player, wire payload, render times; cleans up after itself
+node dev/e2e/verify-backfill.mjs              # 1.3.0 whole-history backfill: plan, knobs, write, idempotence, dialog; cleans up after itself
 npm ci                                        # two packages, install scripts off (.npmrc)
 npm test && npm run lint && npm run build:macro
 ```

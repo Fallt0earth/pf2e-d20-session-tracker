@@ -36,6 +36,9 @@ Open the window from the token controls (d20 icon), a keybinding you assign, or 
 - **Sessions:** session definition with preview, re-apply to history, merge, split, rename, exclude, export CSV/JSON, catch-up, reset (GM).
 - The scroll icon opens the **evening report** in its own popup, on your screen only. Nothing is posted to chat. A GM can choose "Post a link in chat" inside the popup, which adds a single line with an Open button; the report itself never enters the chat log. `api.openReport(key)` does the same from a macro.
 
+## Backfill history (GM)
+Sessions tab → **Backfill history…**. It reads the chat messages still in the world for a date range and adds the d20 rolls they hold, grouped into evenings under your session definition. The preview lists every evening with its rolls, players, whether a GM wrote anything that evening and what is already stored; evenings with fewer rolls than the list threshold or without a GM message are listed but unticked (sheet testing, a quick look between games). Tick what was a real game and add. It adds only, never deletes, skips rolls already stored, and running it again adds nothing. Deleted chat is gone for good; the log is the only source. Old hero-point rerolls lose their original message (PF2e deletes it), so the discarded die is recovered from the surviving card's HTML. Under "Start / End buttons" there is no session for past rolls to go to: switch to *By day* or *By pause* first.
+
 ## Settings (GM)
 Session definition (by day / by pause / Start–End), idle hours, timezone and turnover hour; capture on/off (pause while prepping); count raw d20 rolls; minimum dice to list an evening; player access (whole table / own rolls / GM only); blind-roll policy for player views; Monte Carlo iterations.
 

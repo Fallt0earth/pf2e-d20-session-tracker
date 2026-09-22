@@ -34,6 +34,7 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
       togglePause: TrackerApp.#onTogglePause,
       selectSession: TrackerApp.#onSelectSession,
       catchUp: TrackerApp.#onCatchUp,
+      backfill: TrackerApp.#onBackfill,
       renameSession: TrackerApp.#onRenameSession,
       toggleExclude: TrackerApp.#onToggleExclude,
       deleteSession: TrackerApp.#onDeleteSession,
@@ -415,6 +416,12 @@ export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const r = await api.catchUp();
     ui.notifications.info(game.i18n.format("PF2E-D20.Sessions.CatchUpDone", { added: r.added, scanned: r.scanned }));
     this.render({ parts: ["header", "tonight", "sessions"] });
+  }
+
+  /** The whole-history backfill dialog (GM). */
+  static #onBackfill() {
+    if (!game.user.isGM) return;
+    game.modules.get(MODULE_ID)?.api?.openBackfill();
   }
 
   static async #onRenameSession(_event, target) {
